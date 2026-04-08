@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TriqLog — Driver App</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #111318;
+  --bg2: #181C24;
+  --surface: #1F2433;
+  --surface2: #272D3E;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+
+  --amber: #F5A623;
+  --amber2: #FFB93A;
+  --amber-dim: rgba(245,166,35,0.14);
+  --green: #2ECC71;
+  --green2: #3DDC97;
+  --green-dim: rgba(46,204,113,0.13);
+  --red: #E74C3C;
+  --red-dim: rgba(231,76,60,0.13);
+  --blue: #3498DB;
+  --blue-dim: rgba(52,152,219,0.12);
+
+  --text: #EEF0F8;
+  --text2: #8891AE;
+  --text3: #4A5270;
+
+  --r: 16px;
+  --r-sm: 10px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+html,body{
+  height:100%;
+  font-family:'Outfit',sans-serif;
+  background:#000;
+  color:var(--text);
+  overflow:hidden;
+  font-size:16px;
+}
+
+/* ── PHONE SHELL (desktop preview) ── */
+.phone-shell{
+  width:390px; height:844px;
+  margin:20px auto;
+  background:var(--bg);
+  border-radius:44px;
+  overflow:hidden;
+  position:relative;
+  box-shadow:0 30px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+/* On real mobile just fill screen */
+@media(max-width:430px){
+  html,body{overflow:auto;}
+  .phone-shell{width:100%;height:auto;min-height:100vh;border-radius:0;margin:0;box-shadow:none;}
+}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 24px 6px;
+  font-size:12px;font-weight:700;letter-spacing:0.3px;
+  position:sticky;top:0;z-index:50;
+  background:var(--bg);
+}
+.status-time{font-size:15px;font-weight:800;}
+.status-icons{display:flex;align-items:center;gap:6px;font-size:13px;}
+
+/* ── SCROLL AREA ── */
+.scroll-area{
+  height:calc(844px - 140px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+  padding-bottom:20px;
+}
+@media(max-width:430px){.scroll-area{height:auto;min-height:calc(100vh - 140px);}}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:absolute;bottom:0;left:0;right:0;
+  height:82px;
+  background:var(--bg2);
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 8px 16px;
+}
+.nav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:10px 4px;cursor:pointer;border:none;background:none;
+  transition:all .2s;border-radius:12px;
+}
+.nav-tab .tab-icon{font-size:22px;transition:transform .2s;}
+.nav-tab .tab-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.3px;}
+.nav-tab.active .tab-label{color:var(--amber);}
+.nav-tab.active .tab-icon{transform:scale(1.1);}
+.nav-tab-badge{
+  position:absolute;top:6px;right:calc(50% - 22px);
+  width:17px;height:17px;border-radius:50%;
+  background:var(--red);color:#fff;
+  font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--bg2);
+}
+
+/* ── SCREENS ── */
+.screen{display:none;padding:0 0 8px;}
+.screen.active{display:block;animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── SECTION HEADER ── */
+.screen-header{
+  padding:16px 20px 12px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.screen-title{font-size:22px;font-weight:900;letter-spacing:-0.5px;}
+.screen-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+.header-action{
+  background:var(--surface);border:1px solid var(--border2);
+  border-radius:10px;padding:8px 14px;
+  font-size:12px;font-weight:700;color:var(--amber);cursor:pointer;
+  border:none;
+}
+
+/* ── CARDS ── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);margin:0 16px 12px;
+  overflow:hidden;
+}
+.card-pad{padding:18px;}
+
+/* ── GPS LIVE PANEL ── */
+.gps-panel{
+  margin:0 16px 12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.map-placeholder{
+  height:180px;position:relative;
+  background:linear-gradient(180deg,#1A2232 0%,#141C2A 100%);
+  overflow:hidden;
+}
+/* Simulated map grid */
+.map-placeholder::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(52,152,219,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(52,152,219,0.07) 1px, transparent 1px);
+  background-size:28px 28px;
+}
+.map-placeholder::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 60%, rgba(245,166,35,0.06) 0%, transparent 70%);
+}
+.map-route-svg{position:absolute;inset:0;width:100%;height:100%;}
+.map-truck-pin{
+  position:absolute;
+  width:36px;height:36px;
+  background:var(--amber);border-radius:50% 50% 50% 0;
+  transform:rotate(-45deg);
+  left:50%;top:50%;margin-left:-18px;margin-top:-18px;
+  box-shadow:0 4px 16px rgba(245,166,35,0.5);
+  z-index:5;
+  animation:truckPulse 1.8s ease-in-out infinite;
+}
+.map-truck-pin::after{
+  content:'🚛';position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  transform:rotate(45deg);font-size:16px;
+}
+@keyframes truckPulse{
+  0%,100%{box-shadow:0 4px 16px rgba(245,166,35,0.5);}
+  50%{box-shadow:0 4px 28px rgba(245,166,35,0.8),0 0 0 8px rgba(245,166,35,0.1);}
+}
+.map-dest-pin{
+  position:absolute;width:12px;height:12px;
+  background:var(--red);border-radius:50%;border:2px solid #fff;
+  right:22%;top:22%;z-index:5;
+  box-shadow:0 0 12px rgba(231,76,60,0.6);
+}
+.map-origin-pin{
+  position:absolute;width:10px;height:10px;
+  background:var(--green);border-radius:50%;border:2px solid #fff;
+  left:18%;bottom:28%;z-index:5;
+}
+.gps-info-bar{
+  display:flex;padding:14px 16px;gap:0;
+  border-top:1px solid var(--border);
+}
+.gps-stat{
+  flex:1;text-align:center;
+  border-right:1px solid var(--border);
+}
+.gps-stat:last-child{border-right:none;}
+.gps-stat-val{font-size:18px;font-weight:800;color:var(--amber);}
+.gps-stat-lbl{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;}
+.gps-status-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;
+  background:var(--green-dim);border-top:1px solid rgba(46,204,113,0.15);
+}
+.gps-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 1.5s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.gps-status-text{font-size:12px;font-weight:700;color:var(--green);}
+.gps-coords{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-left:auto;}
+
+/* GPS permission notice */
+.gps-permission{
+  margin:0 16px 12px;padding:14px 16px;
+  background:var(--blue-dim);border:1px solid rgba(52,152,219,0.2);
+  border-radius:var(--r-sm);
+  display:flex;align-items:center;gap:12px;
+  cursor:pointer;
+}
+.gps-perm-icon{font-size:20px;}
+.gps-perm-text{font-size:13px;color:var(--text2);flex:1;}
+.gps-perm-text strong{color:var(--blue);}
+.gps-perm-btn{
+  background:var(--blue);color:#fff;
+  border:none;border-radius:8px;padding:7px 14px;
+  font-size:12px;font-weight:700;cursor:pointer;
+  font-family:'Outfit',sans-serif;white-space:nowrap;
+}
+
+/* ── PAYMENT WIDGET ── */
+.payment-card{
+  margin:0 16px 12px;
+  background:linear-gradient(135deg,#1A2B1A,#141E14);
+  border:1px solid rgba(46,204,113,0.2);
+  border-radius:var(--r);overflow:hidden;
+}
+.payment-header{
+  padding:16px 18px 12px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.payment-title{font-size:14px;font-weight:800;color:var(--text);}
+.payment-load-id{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.fee-badge{
+  background:rgba(245,166,35,0.15);border:1px solid rgba(245,166,35,0.3);
+  border-radius:100px;padding:3px 10px;
+  font-size:10px;font-weight:800;color:var(--amber);
+  font-family:'IBM Plex Mono',monospace;
+}
+.payment-split{
+  display:flex;padding:0 18px 16px;gap:10px;
+}
+.split-half{
+  flex:1;border-radius:12px;padding:14px;
+}
+.split-half.upfront{
+  background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);
+}
+.split-half.delivery{
+  background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.2);
+}
+.split-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;}
+.split-label.green{color:var(--green);}
+.split-label.amber{color:var(--amber);}
+.split-amount{font-size:22px;font-weight:900;}
+.split-amount.green{color:var(--green);}
+.split-amount.amber{color:var(--amber);}
+.split-when{font-size:11px;color:var(--text2);margin-top:4px;}
+.split-status{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:8px;padding:3px 10px;border-radius:100px;
+  font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+}
+.split-status.paid{background:var(--green-dim);color:var(--green);}
+.split-status.pending{background:var(--amber-dim);color:var(--amber);}
+.split-status.locked{background:rgba(255,255,255,0.06);color:var(--text3);}
+
+.payment-total{
+  margin:0 18px;padding:12px 0;
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.pt-label{font-size:12px;color:var(--text2);}
+.pt-val{font-size:13px;font-weight:800;}
+.payment-footer{
+  padding:12px 18px;
+  background:rgba(0,0,0,0.2);
+  border-top:1px solid rgba(255,255,255,0.05);
+  display:flex;gap:10px;
+}
+.btn-confirm-delivery{
+  flex:1;background:var(--amber);color:#0A0700;
+  border:none;border-radius:10px;padding:12px;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-confirm-delivery:active{transform:scale(0.97);}
+.btn-issue{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 16px;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* ── DOCUMENT UPLOAD CARDS ── */
+.doc-card{
+  margin:0 16px 10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.doc-header{
+  display:flex;align-items:center;gap:12px;padding:16px;cursor:pointer;
+}
+.doc-icon{
+  width:46px;height:46px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  flex-shrink:0;
+}
+.doc-icon.uploaded{background:var(--green-dim);}
+.doc-icon.pending{background:var(--amber-dim);}
+.doc-icon.missing{background:var(--red-dim);}
+.doc-icon.skipped{background:rgba(255,255,255,0.06);}
+.doc-body{flex:1;min-width:0;}
+.doc-name{font-size:15px;font-weight:700;}
+.doc-status{font-size:12px;margin-top:3px;}
+.doc-status.green{color:var(--green);}
+.doc-status.amber{color:var(--amber);}
+.doc-status.red{color:var(--red);}
+.doc-status.grey{color:var(--text3);}
+.doc-actions{
+  display:flex;gap:8px;padding:0 16px 16px;
+}
+.doc-btn{
+  flex:1;padding:10px;border-radius:10px;border:none;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s;
+}
+.doc-btn:active{transform:scale(0.96);}
+.doc-btn.upload{background:var(--amber);color:#0A0700;}
+.doc-btn.skip{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}
+.doc-btn.help{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(52,152,219,0.2);}
+.doc-btn.view{background:var(--green-dim);color:var(--green);border:1px solid rgba(46,204,113,0.2);}
+
+/* skip confirmation */
+.skip-confirm{
+  background:rgba(231,76,60,0.06);border-top:1px solid rgba(231,76,60,0.15);
+  padding:12px 16px;display:none;
+}
+.skip-confirm.show{display:block;}
+.skip-title{font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px;}
+.skip-desc{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5;}
+.skip-actions{display:flex;gap:8px;}
+.skip-yes{background:var(--red-dim);color:var(--red);border:1px solid rgba(231,76,60,0.3);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;}
+.skip-no{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;}
+
+/* obtain help */
+.obtain-help{
+  background:rgba(52,152,219,0.06);border-top:1px solid rgba(52,152,219,0.15);
+  padding:14px 16px;display:none;
+}
+.obtain-help.show{display:block;}
+.obtain-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px;}
+.obtain-steps{display:flex;flex-direction:column;gap:6px;}
+.obtain-step{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12px;color:var(--text2);padding:8px 10px;
+  background:rgba(255,255,255,0.04);border-radius:8px;
+}
+.os-num{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--blue-dim);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace;
+}
+.obtain-cta{
+  margin-top:10px;width:100%;background:var(--blue);color:#fff;
+  border:none;border-radius:10px;padding:11px;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;
+}
+
+/* ── ACTIVE TRIP ── */
+.trip-card{
+  margin:0 16px 12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.trip-header{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;
+  background:linear-gradient(135deg,rgba(245,166,35,0.08),transparent);
+  border-bottom:1px solid var(--border);
+}
+.trip-badge{
+  background:var(--amber);color:#0A0700;
+  border-radius:100px;padding:3px 12px;
+  font-size:10px;font-weight:800;letter-spacing:0.5px;
+  font-family:'IBM Plex Mono',monospace;
+}
+.trip-id{font-size:12px;color:var(--text2);font-family:'IBM Plex Mono',monospace;}
+.trip-body{padding:16px;}
+.trip-route{
+  display:flex;align-items:center;gap:8px;margin-bottom:14px;
+}
+.trip-city{font-size:17px;font-weight:800;}
+.trip-arrow{color:var(--amber);font-size:18px;}
+.trip-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.trip-chip{
+  background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  border-radius:8px;padding:5px 12px;
+  font-size:12px;color:var(--text2);
+  display:flex;align-items:center;gap:5px;
+}
+
+/* Progress bar for trip */
+.trip-progress{margin-bottom:16px;}
+.tp-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;color:var(--text2);}
+.tp-bar{height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;}
+.tp-fill{height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:4px;transition:width 1s ease;width:62%;}
+
+/* Confirm delivery button */
+.confirm-btn{
+  width:100%;background:linear-gradient(135deg,var(--green),#27AE60);
+  color:#fff;border:none;border-radius:12px;padding:16px;
+  font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .2s;
+}
+.confirm-btn:active{transform:scale(0.97);}
+
+/* ── LOAD BOARD ── */
+.load-item{
+  margin:0 16px 10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;cursor:pointer;
+  transition:border-color .2s;
+}
+.load-item:active{border-color:var(--amber);}
+.load-item-header{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:flex-start;}
+.load-route-text{font-size:16px;font-weight:800;}
+.load-price{font-size:20px;font-weight:900;color:var(--amber);}
+.load-price-sub{font-size:10px;color:var(--text3);text-align:right;font-family:'IBM Plex Mono',monospace;}
+.load-chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px;}
+.lchip{
+  background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  border-radius:100px;padding:3px 10px;font-size:11px;color:var(--text2);
+}
+.lchip.hot{background:var(--red-dim);border-color:rgba(231,76,60,0.3);color:var(--red);}
+.lchip.green{background:var(--green-dim);border-color:rgba(46,204,113,0.2);color:var(--green);}
+.load-payment-preview{
+  margin:0 16px 10px;
+  background:rgba(46,204,113,0.04);border:1px solid rgba(46,204,113,0.15);
+  border-radius:10px;padding:10px 14px;
+  display:flex;justify-content:space-between;font-size:12px;
+}
+.lpp-col{text-align:center;}
+.lpp-label{color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;}
+.lpp-val{font-weight:800;margin-top:3px;}
+.lpp-val.green{color:var(--green);}
+.lpp-val.amber{color:var(--amber);}
+.lpp-val.red{color:var(--red);}
+.lpp-divider{width:1px;background:var(--border);align-self:stretch;}
+.load-actions{padding:0 16px 14px;display:flex;gap:8px;}
+.btn-accept-load{
+  flex:1;background:var(--amber);color:#0A0700;
+  border:none;border-radius:10px;padding:12px;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-accept-load:active{transform:scale(0.97);}
+.btn-skip-load{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 16px;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;
+  color:var(--text3);cursor:pointer;
+}
+
+/* ── WALLET SCREEN ── */
+.wallet-hero{
+  margin:0 16px 12px;
+  background:linear-gradient(135deg,#1A2410,#141A0C);
+  border:1px solid rgba(46,204,113,0.2);border-radius:var(--r);
+  padding:24px;position:relative;overflow:hidden;
+}
+.wallet-hero::before{
+  content:'🇲🇦';position:absolute;right:20px;top:50%;transform:translateY(-50%);
+  font-size:60px;opacity:0.08;
+}
+.wallet-lbl{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+.wallet-amount{font-size:38px;font-weight:900;color:var(--green);margin:8px 0;}
+.wallet-pending{font-size:13px;color:var(--text2);}
+.wallet-pending span{color:var(--amber);font-weight:700;}
+
+/* Payment method chips */
+.pmethod-scroll{
+  display:flex;gap:10px;padding:0 16px 12px;overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.pmethod-scroll::-webkit-scrollbar{display:none;}
+.pmethod-card{
+  flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:14px 16px;min-width:130px;cursor:pointer;
+  transition:border-color .2s;text-align:center;
+}
+.pmethod-card.active{border-color:var(--amber);background:var(--amber-dim);}
+.pmethod-card:active{transform:scale(0.96);}
+.pmethod-icon{font-size:26px;margin-bottom:6px;}
+.pmethod-name{font-size:12px;font-weight:700;}
+.pmethod-sub{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* Transaction list */
+.tx-list{margin:0 16px;}
+.tx-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.tx-item:last-child{border-bottom:none;}
+.tx-icon{
+  width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  flex-shrink:0;
+}
+.tx-icon.credit{background:var(--green-dim);}
+.tx-icon.debit{background:var(--red-dim);}
+.tx-icon.pending-icon{background:var(--amber-dim);}
+.tx-body{flex:1;min-width:0;}
+.tx-name{font-size:14px;font-weight:700;}
+.tx-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.tx-amount{font-size:15px;font-weight:800;white-space:nowrap;}
+.tx-amount.green{color:var(--green);}
+.tx-amount.red{color:var(--red);}
+.tx-amount.amber{color:var(--amber);}
+
+/* ── PROFILE SCREEN ── */
+.profile-hero{
+  margin:0 16px 14px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;
+  display:flex;align-items:center;gap:14px;
+}
+.profile-avatar{
+  width:62px;height:62px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber),#C07A10);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;flex-shrink:0;
+  border:3px solid var(--amber);
+}
+.profile-name{font-size:20px;font-weight:800;}
+.profile-phone{font-size:13px;color:var(--text2);font-family:'IBM Plex Mono',monospace;margin-top:3px;}
+.profile-tier{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--amber-dim);border:1px solid rgba(245,166,35,0.3);
+  border-radius:100px;padding:4px 12px;font-size:11px;font-weight:700;
+  color:var(--amber);margin-top:8px;font-family:'IBM Plex Mono',monospace;
+}
+
+/* ── MISC ── */
+.section-label{
+  font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--text3);font-family:'IBM Plex Mono',monospace;
+  padding:4px 20px 8px;
+}
+.info-notice{
+  margin:0 16px 12px;padding:12px 14px;
+  border-radius:var(--r-sm);
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:13px;
+}
+.info-notice.amber{background:var(--amber-dim);border:1px solid rgba(245,166,35,0.2);}
+.info-notice.blue{background:var(--blue-dim);border:1px solid rgba(52,152,219,0.2);}
+.info-notice.green{background:var(--green-dim);border:1px solid rgba(46,204,113,0.2);}
+.in-icon{font-size:18px;flex-shrink:0;}
+.in-text{color:var(--text2);line-height:1.5;}
+.in-text strong{color:var(--text);}
+
+/* Toast */
+.toast{
+  position:absolute;bottom:100px;left:16px;right:16px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-left:3px solid var(--amber);
+  border-radius:12px;padding:12px 16px;
+  box-shadow:var(--shadow);z-index:999;
+  transform:translateY(20px);opacity:0;
+  transition:all .3s ease;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast-title{font-weight:800;font-size:13px;color:var(--amber);margin-bottom:2px;}
+.toast-body{font-size:12px;color:var(--text2);}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="phone-shell">
+  <div class="status-bar">
+    <div class="status-time" id="liveTime">09:41</div>
+    <div class="status-icons">
+      <span id="gpsIcon">📍</span>
+      <span>●●●●</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <div class="scroll-area" id="scrollArea">
+
+    <!-- ══════════════════════
+         SCREEN: HOME / TRIP
+    ══════════════════════ -->
+    <div id="screen-home" class="screen active">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title">Salam, Mustapha 👋</div>
+          <div class="screen-sub">1 voyage actif · GPS actif</div>
+        </div>
+        <button class="header-action" onclick="showScreen('loads')">Chargements →</button>
+      </div>
+
+      <!-- GPS Panel -->
+      <div class="gps-panel" id="gpsPanel">
+        <div class="map-placeholder">
+          <svg class="map-route-svg" viewBox="0 0 390 180" xmlns="http://www.w3.org/2000/svg">
+            <!-- animated route path -->
+            <defs>
+              <linearGradient id="routeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#2ECC71;stop-opacity:0.8"/>
+                <stop offset="62%" style="stop-color:#F5A623;stop-opacity:1"/>
+                <stop offset="100%" style="stop-color:#3498DB;stop-opacity:0.4"/>
+              </linearGradient>
+            </defs>
+            <!-- Road -->
+            <path d="M 72 130 Q 140 90 195 90 Q 270 90 300 58" stroke="rgba(255,255,255,0.06)" stroke-width="16" fill="none" stroke-linecap="round"/>
+            <!-- Route line -->
+            <path d="M 72 130 Q 140 90 195 90 Q 270 90 300 58" stroke="url(#routeGrad)" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="8 4"/>
+            <!-- City dots -->
+            <circle cx="72" cy="130" r="5" fill="#2ECC71" opacity="0.7"/>
+            <circle cx="300" cy="58" r="5" fill="#3498DB" opacity="0.7"/>
+            <!-- City labels -->
+            <text x="50" y="148" fill="rgba(255,255,255,0.5)" font-size="10" font-family="monospace">Béni Mellal</text>
+            <text x="268" y="50" fill="rgba(255,255,255,0.5)" font-size="10" font-family="monospace">Casablanca</text>
+          </svg>
+          <div class="map-truck-pin" id="truckPin" style="left:calc(50% + 10px);top:calc(50% - 5px);"></div>
+          <div class="map-dest-pin"></div>
+          <div class="map-origin-pin"></div>
+        </div>
+        <div class="gps-status-bar" id="gpsStatusBar">
+          <div class="gps-dot"></div>
+          <div class="gps-status-text">GPS Actif — Position partagée avec le chargeur</div>
+          <div class="gps-coords" id="gpsCoords">31.°N 7.°W</div>
+        </div>
+        <div class="gps-info-bar">
+          <div class="gps-stat">
+            <div class="gps-stat-val" id="gpsSpeed">74</div>
+            <div class="gps-stat-lbl">km/h</div>
+          </div>
+          <div class="gps-stat">
+            <div class="gps-stat-val" id="gpsDist">148</div>
+            <div class="gps-stat-lbl">km restant</div>
+          </div>
+          <div class="gps-stat">
+            <div class="gps-stat-val" id="gpsEta">2h14</div>
+            <div class="gps-stat-lbl">ETA</div>
+          </div>
+          <div class="gps-stat">
+            <div class="gps-stat-val">62%</div>
+            <div class="gps-stat-lbl">trajet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Trip -->
+      <div class="trip-card">
+        <div class="trip-header">
+          <div class="trip-badge">EN ROUTE</div>
+          <div class="trip-id">LOT-8821 · Départ 07:32</div>
+        </div>
+        <div class="trip-body">
+          <div class="trip-route">
+            <div class="trip-city">Béni Mellal</div>
+            <div class="trip-arrow">→</div>
+            <div class="trip-city">Casablanca</div>
+          </div>
+          <div class="trip-meta">
+            <div class="trip-chip">🏋️ 22T Matériaux</div>
+            <div class="trip-chip">📏 310 km</div>
+            <div class="trip-chip">📅 Livraison: 12:00</div>
+          </div>
+          <div class="trip-progress">
+            <div class="tp-label"><span>Béni Mellal</span><span>Casablanca</span></div>
+            <div class="tp-bar"><div class="tp-fill"></div></div>
+          </div>
+          <button class="confirm-btn" onclick="confirmDelivery()">
+            ✅ Confirmer la livraison
+          </button>
+        </div>
+      </div>
+
+      <!-- Payment card for active trip -->
+      <div class="payment-card">
+        <div class="payment-header">
+          <div>
+            <div class="payment-title">Paiement — LOT-8821</div>
+            <div class="payment-load-id">Bricoma SARL · Casablanca</div>
+          </div>
+          <div class="fee-badge">−3% frais plateforme</div>
+        </div>
+        <div class="payment-split">
+          <div class="split-half upfront">
+            <div class="split-label green">50% À LA PRISE EN CHARGE</div>
+            <div class="split-amount green">MAD 3,395</div>
+            <div class="split-when">Reçu le 06/04 · 07:15</div>
+            <div class="split-status paid">✓ Reçu</div>
+          </div>
+          <div class="split-half delivery">
+            <div class="split-label amber">50% À LA LIVRAISON</div>
+            <div class="split-amount amber">MAD 3,395</div>
+            <div class="split-when">Libéré à confirmation GPS</div>
+            <div class="split-status pending" id="deliverySplitStatus">⏳ En attente</div>
+          </div>
+        </div>
+        <div class="payment-total" style="padding:0 18px 14px;">
+          <div>
+            <div class="pt-label">Total brut: MAD 7,000</div>
+            <div class="pt-label">Frais plateforme (3%): −MAD 210</div>
+          </div>
+          <div>
+            <div class="pt-label" style="text-align:right;margin-bottom:4px;">Vous recevez</div>
+            <div class="pt-val" style="color:var(--green);font-size:18px;">MAD 6,790</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-notice amber">
+        <div class="in-icon">ℹ️</div>
+        <div class="in-text"><strong>Déclenchement automatique :</strong> Dès que votre GPS confirme l'arrivée dans un rayon de 500m de la destination, le <strong>2ème versement est libéré automatiquement</strong>. Pas besoin d'appel ou de signature papier.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════
+         SCREEN: DOCUMENTS
+    ══════════════════════ -->
+    <div id="screen-docs" class="screen">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title">Mes Documents</div>
+          <div class="screen-sub">Ajoutez ce que vous avez. Le reste, on vous aide.</div>
+        </div>
+      </div>
+
+      <div class="info-notice blue">
+        <div class="in-icon">💡</div>
+        <div class="in-text"><strong>Pas de document ?</strong> Appuyez sur <em>"Je n'ai pas"</em> et nous vous expliquons comment l'obtenir — avec notre aide si nécessaire.</div>
+      </div>
+
+      <!-- CIN -->
+      <div class="doc-card" id="doc-cin">
+        <div class="doc-header">
+          <div class="doc-icon uploaded">🪪</div>
+          <div class="doc-body">
+            <div class="doc-name">CIN — Carte d'identité nationale</div>
+            <div class="doc-status green">✓ Vérifié — expire 03/2030</div>
+          </div>
+          <span style="color:var(--green);font-size:20px;">✓</span>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn view" onclick="showToast('🪪 CIN','Document vérifié et stocké en sécurité.')">👁 Voir</button>
+          <button class="doc-btn upload" onclick="triggerUpload('cin')">🔄 Renouveler</button>
+        </div>
+      </div>
+
+      <!-- Carte grise -->
+      <div class="doc-card" id="doc-cg">
+        <div class="doc-header" onclick="toggleDoc('doc-cg-actions')">
+          <div class="doc-icon pending">📄</div>
+          <div class="doc-body">
+            <div class="doc-name">Carte grise du véhicule</div>
+            <div class="doc-status amber">⏳ Photo en cours de vérification</div>
+          </div>
+          <span style="color:var(--text3);">›</span>
+        </div>
+        <div class="doc-actions" id="doc-cg-actions">
+          <button class="doc-btn upload" onclick="triggerUpload('cg')">📸 Nouvelle photo</button>
+          <button class="doc-btn help" onclick="showObtainHelp('doc-cg-help','carte grise')">❓ Aide</button>
+        </div>
+        <div class="obtain-help" id="doc-cg-help">
+          <div class="obtain-title">📄 Problème avec votre carte grise ?</div>
+          <div class="obtain-steps">
+            <div class="obtain-step"><div class="os-num">1</div><span>Si le camion est en leasing, une copie du contrat suffit</span></div>
+            <div class="obtain-step"><div class="os-num">2</div><span>Si carte grise perdue : Centre de Services des Impôts de votre ville — ~150 DH</span></div>
+            <div class="obtain-step"><div class="os-num">3</div><span>En cas de copropriété : attestation signée du propriétaire + votre CIN</span></div>
+          </div>
+          <button class="obtain-cta" onclick="showToast('📞 Agent','Un agent TriqLog vous rappelle dans 30 min pour vous guider.')">📞 Je veux de l'aide</button>
+        </div>
+      </div>
+
+      <!-- Assurance -->
+      <div class="doc-card" id="doc-assurance">
+        <div class="doc-header" onclick="toggleDoc('doc-assurance-actions')">
+          <div class="doc-icon missing">🛡️</div>
+          <div class="doc-body">
+            <div class="doc-name">Assurance RC Transport</div>
+            <div class="doc-status red">✗ Non fourni</div>
+          </div>
+          <span style="color:var(--text3);">›</span>
+        </div>
+        <div class="doc-actions" id="doc-assurance-actions">
+          <button class="doc-btn upload" onclick="triggerUpload('assurance')">📸 J'ai une assurance</button>
+          <button class="doc-btn skip" onclick="showSkipConfirm('doc-assurance-skip','Assurance RC')">✗ Je n'ai pas</button>
+        </div>
+        <div class="skip-confirm" id="doc-assurance-skip">
+          <div class="skip-title">Sans assurance RC, votre accès est limité</div>
+          <div class="skip-desc">Vous pouvez continuer, mais les chargements de +10,000 MAD seront bloqués jusqu'à avoir une assurance. Voulez-vous qu'on vous aide à en obtenir une ?</div>
+          <div class="skip-actions">
+            <button class="skip-yes" onclick="markSkipped('doc-assurance');showToast('⚠️ Noté','Chargements limités à MAD 10,000 sans assurance.')">Continuer sans</button>
+            <button class="skip-no" onclick="showObtainHelp('doc-assurance-help','assurance');hideSkip('doc-assurance-skip')">Obtenir une assurance</button>
+          </div>
+        </div>
+        <div class="obtain-help" id="doc-assurance-help">
+          <div class="obtain-title">🛡️ Obtenir une Assurance RC Transport</div>
+          <div class="obtain-steps">
+            <div class="obtain-step"><div class="os-num">1</div><span>Partenaire TriqLog : <strong>Wafaassurance</strong> — souscription 100% mobile</span></div>
+            <div class="obtain-step"><div class="os-num">2</div><span>Tarif groupe TriqLog : à partir de <strong>180 DH/mois</strong> (normal: 280 DH)</span></div>
+            <div class="obtain-step"><div class="os-num">3</div><span>Activation en 24h — attestation envoyée par WhatsApp</span></div>
+          </div>
+          <button class="obtain-cta" onclick="showToast('🛡️ Wafaassurance','Un conseiller vous contacte. Activation possible dès aujourd\'hui.')">Souscrire maintenant — 180 DH/mois</button>
+        </div>
+      </div>
+
+      <!-- CNSS -->
+      <div class="doc-card" id="doc-cnss">
+        <div class="doc-header" onclick="toggleDoc('doc-cnss-actions')">
+          <div class="doc-icon skipped">📋</div>
+          <div class="doc-body">
+            <div class="doc-name">Attestation CNSS</div>
+            <div class="doc-status grey">○ Optionnel — Niveau Argent</div>
+          </div>
+          <span style="color:var(--text3);">›</span>
+        </div>
+        <div class="doc-actions" id="doc-cnss-actions">
+          <button class="doc-btn upload" onclick="triggerUpload('cnss')">📸 J'ai mon numéro CNSS</button>
+          <button class="doc-btn skip" onclick="showSkipConfirm('doc-cnss-skip','CNSS')">✗ Je n'ai pas</button>
+        </div>
+        <div class="skip-confirm" id="doc-cnss-skip">
+          <div class="skip-title">CNSS non obligatoire pour l'instant</div>
+          <div class="skip-desc">Vous pouvez travailler sans CNSS au niveau Bronze. L'inscription CNSS vous donnera accès à l'assurance maladie et à la retraite. Intéressé ?</div>
+          <div class="skip-actions">
+            <button class="skip-yes" onclick="markSkipped('doc-cnss');hideSkip('doc-cnss-skip');showToast('✓ OK','CNSS marqué comme non disponible. Rappel dans 3 mois.')">Plus tard</button>
+            <button class="skip-no" onclick="showObtainHelp('doc-cnss-help','CNSS');hideSkip('doc-cnss-skip')">Comment s'inscrire</button>
+          </div>
+        </div>
+        <div class="obtain-help" id="doc-cnss-help">
+          <div class="obtain-title">📋 S'inscrire à la CNSS</div>
+          <div class="obtain-steps">
+            <div class="obtain-step"><div class="os-num">1</div><span>Agence CNSS la plus proche — avec votre CIN et carte grise</span></div>
+            <div class="obtain-step"><div class="os-num">2</div><span>Durée : 1 matinée · Gratuit (vous cotiserez 6% par voyage)</span></div>
+            <div class="obtain-step"><div class="os-num">3</div><span>TriqLog déduit et verse automatiquement vos cotisations</span></div>
+          </div>
+          <button class="obtain-cta" onclick="showToast('🤝 Agent CNSS','Un agent TriqLog vous accompagnera à l\'agence CNSS de votre ville.')">Être accompagné par TriqLog</button>
+        </div>
+      </div>
+
+      <!-- Visite technique -->
+      <div class="doc-card" id="doc-visite">
+        <div class="doc-header" onclick="toggleDoc('doc-visite-actions')">
+          <div class="doc-icon missing">🔧</div>
+          <div class="doc-body">
+            <div class="doc-name">Visite technique</div>
+            <div class="doc-status red">✗ Expirée — juin 2025</div>
+          </div>
+          <span style="color:var(--text3);">›</span>
+        </div>
+        <div class="doc-actions" id="doc-visite-actions">
+          <button class="doc-btn upload" onclick="triggerUpload('visite')">📸 J'ai renouvelé</button>
+          <button class="doc-btn skip" onclick="showSkipConfirm('doc-visite-skip','Visite technique')">✗ Pas encore</button>
+        </div>
+        <div class="skip-confirm" id="doc-visite-skip">
+          <div class="skip-title">Visite technique expirée — Risque légal</div>
+          <div class="skip-desc">Conduire avec une visite expirée est une infraction. Cela peut bloquer vos paiements en cas d'accident. Centres partenaires TriqLog : Casablanca (350 DH), Béni Mellal (320 DH).</div>
+          <div class="skip-actions">
+            <button class="skip-yes" onclick="markSkipped('doc-visite');hideSkip('doc-visite-skip');showToast('⚠️ Rappel activé','Vous serez bloqué des grands chargements jusqu\'au renouvellement.')">Je ferai ça après</button>
+            <button class="skip-no" onclick="showObtainHelp('doc-visite-help','visite');hideSkip('doc-visite-skip')">Trouver un centre</button>
+          </div>
+        </div>
+        <div class="obtain-help" id="doc-visite-help">
+          <div class="obtain-title">🔧 Centres de visite technique partenaires</div>
+          <div class="obtain-steps">
+            <div class="obtain-step"><div class="os-num">📍</div><span><strong>Casablanca</strong> — Bd Zerktouni · 350 DH · Lun–Sam 07h–17h</span></div>
+            <div class="obtain-step"><div class="os-num">📍</div><span><strong>Béni Mellal</strong> — Route Nationale 8 · 320 DH · Sur RDV</span></div>
+            <div class="obtain-step"><div class="os-num">📍</div><span><strong>Fès</strong> — Zone Industrielle Sidi Brahim · 340 DH</span></div>
+          </div>
+          <button class="obtain-cta" onclick="showToast('📅 RDV','Réservation confirmée au centre de Béni Mellal — demain 09h00.')">Réserver un créneau</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════
+         SCREEN: LOADS
+    ══════════════════════ -->
+    <div id="screen-loads" class="screen">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title">Chargements proches</div>
+          <div class="screen-sub">📍 Autour de Béni Mellal · 4 disponibles</div>
+        </div>
+      </div>
+
+      <div class="info-notice green">
+        <div class="in-icon">📍</div>
+        <div class="in-text"><strong>GPS actif :</strong> Ces chargements correspondent à votre position actuelle. Actualisé automatiquement.</div>
+      </div>
+
+      <!-- Load 1 -->
+      <div class="load-item" id="loadItem1">
+        <div class="load-item-header">
+          <div>
+            <div class="load-route-text">Béni Mellal → Casablanca</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:4px;">LOT-8844 · Départ aujourd'hui 15:00</div>
+          </div>
+          <div>
+            <div class="load-price">MAD 6,790</div>
+            <div class="load-price-sub">NET après 3% frais</div>
+          </div>
+        </div>
+        <div class="load-chips">
+          <div class="lchip hot">🔥 URGENT</div>
+          <div class="lchip">🏋️ 18T</div>
+          <div class="lchip">📏 310km</div>
+          <div class="lchip green">✓ Assurance incluse</div>
+        </div>
+        <!-- Payment breakdown -->
+        <div class="load-payment-preview">
+          <div class="lpp-col">
+            <div class="lpp-label">Brut</div>
+            <div class="lpp-val">7,000</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">Frais (3%)</div>
+            <div class="lpp-val red">−210</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% maintenant</div>
+            <div class="lpp-val green">3,395</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% livraison</div>
+            <div class="lpp-val amber">3,395</div>
+          </div>
+        </div>
+        <div class="load-actions">
+          <button class="btn-accept-load" onclick="acceptLoad('LOT-8844','Béni Mellal → Casablanca',7000)">✅ Accepter — MAD 6,790</button>
+          <button class="btn-skip-load" onclick="document.getElementById('loadItem1').style.opacity='0.4'">✕</button>
+        </div>
+      </div>
+
+      <!-- Load 2 -->
+      <div class="load-item" id="loadItem2">
+        <div class="load-item-header">
+          <div>
+            <div class="load-route-text">Fquih Ben Salah → Rabat</div>
+            <div style="font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:4px;">LOT-8851 · Départ demain 07:00</div>
+          </div>
+          <div>
+            <div class="load-price">MAD 5,335</div>
+            <div class="load-price-sub">NET après 3% frais</div>
+          </div>
+        </div>
+        <div class="load-chips">
+          <div class="lchip">🏋️ 14T</div>
+          <div class="lchip">📏 260km</div>
+          <div class="lchip">🌿 Agricole</div>
+          <div class="lchip green">Retour disponible</div>
+        </div>
+        <div class="load-payment-preview">
+          <div class="lpp-col">
+            <div class="lpp-label">Brut</div>
+            <div class="lpp-val">5,500</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">Frais (3%)</div>
+            <div class="lpp-val red">−165</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% maintenant</div>
+            <div class="lpp-val green">2,668</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% livraison</div>
+            <div class="lpp-val amber">2,668</div>
+          </div>
+        </div>
+        <div class="load-actions">
+          <button class="btn-accept-load" onclick="acceptLoad('LOT-8851','Fquih Ben Salah → Rabat',5500)">✅ Accepter — MAD 5,335</button>
+          <button class="btn-skip-load" onclick="document.getElementById('loadItem2').style.opacity='0.4'">✕</button>
+        </div>
+      </div>
+
+      <!-- Load 3 — backhaul -->
+      <div class="load-item" id="loadItem3">
+        <div class="load-item-header">
+          <div>
+            <div class="load-route-text" style="display:flex;align-items:center;gap:8px;">
+              Casablanca → Béni Mellal
+              <span style="background:var(--green-dim);color:var(--green);font-size:10px;font-weight:800;border-radius:4px;padding:2px 7px;font-family:'IBM Plex Mono',monospace;">RETOUR</span>
+            </div>
+            <div style="font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:4px;">LOT-8860 · Disponible après livraison</div>
+          </div>
+          <div>
+            <div class="load-price">MAD 4,220</div>
+            <div class="load-price-sub">NET après 3% frais</div>
+          </div>
+        </div>
+        <div class="load-chips">
+          <div class="lchip">🏋️ 12T</div>
+          <div class="lchip">📏 310km</div>
+          <div class="lchip green">✓ Évite retour à vide</div>
+        </div>
+        <div class="load-payment-preview">
+          <div class="lpp-col">
+            <div class="lpp-label">Brut</div>
+            <div class="lpp-val">4,350</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">Frais (3%)</div>
+            <div class="lpp-val red">−131</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% maintenant</div>
+            <div class="lpp-val green">2,110</div>
+          </div>
+          <div class="lpp-divider"></div>
+          <div class="lpp-col">
+            <div class="lpp-label">50% livraison</div>
+            <div class="lpp-val amber">2,110</div>
+          </div>
+        </div>
+        <div class="load-actions">
+          <button class="btn-accept-load" onclick="acceptLoad('LOT-8860','Casablanca → Béni Mellal (retour)',4350)">✅ Réserver retour</button>
+          <button class="btn-skip-load" onclick="document.getElementById('loadItem3').style.opacity='0.4'">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════
+         SCREEN: WALLET
+    ══════════════════════ -->
+    <div id="screen-wallet" class="screen">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title">Mon Portefeuille</div>
+          <div class="screen-sub">Sans compte bancaire nécessaire</div>
+        </div>
+      </div>
+
+      <div class="wallet-hero">
+        <div class="wallet-lbl">Solde disponible</div>
+        <div class="wallet-amount">MAD 3,395</div>
+        <div class="wallet-pending">+ <span>MAD 3,395</span> bloqué · libéré à livraison GPS</div>
+      </div>
+
+      <div class="section-label">Comment retirer</div>
+      <div class="pmethod-scroll">
+        <div class="pmethod-card active" onclick="selectPMethod(this)">
+          <div class="pmethod-icon">🤝</div>
+          <div class="pmethod-name">Agent Cash</div>
+          <div class="pmethod-sub">Dans votre ville · 0 frais</div>
+        </div>
+        <div class="pmethod-card" onclick="selectPMethod(this)">
+          <div class="pmethod-icon">📱</div>
+          <div class="pmethod-name">Wafacash</div>
+          <div class="pmethod-sub">2,400 points · Immédiat</div>
+        </div>
+        <div class="pmethod-card" onclick="selectPMethod(this)">
+          <div class="pmethod-icon">🏦</div>
+          <div class="pmethod-name">CIH Mobile</div>
+          <div class="pmethod-sub">Compte sans agence · CIN</div>
+        </div>
+        <div class="pmethod-card" onclick="selectPMethod(this)">
+          <div class="pmethod-icon">⛽</div>
+          <div class="pmethod-name">Afriquia</div>
+          <div class="pmethod-sub">Carte carburant · −0.8 DH/L</div>
+        </div>
+      </div>
+
+      <div style="margin:0 16px 12px;">
+        <button style="width:100%;background:var(--amber);color:#0A0700;border:none;border-radius:12px;padding:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;cursor:pointer;" onclick="showToast('💵 Retrait','Agent Cash Béni Mellal contacté. Présentez-vous avec votre CIN — Code: SHL-7723.')">
+          💵 Retirer MAD 3,395 — Agent Cash
+        </button>
+      </div>
+
+      <div class="section-label">Historique des transactions</div>
+      <div class="tx-list">
+        <div class="tx-item">
+          <div class="tx-icon credit">✅</div>
+          <div class="tx-body">
+            <div class="tx-name">50% Prise en charge — LOT-8821</div>
+            <div class="tx-sub">06/04/2026 · 07:15 · Bricoma SARL</div>
+          </div>
+          <div class="tx-amount green">+3,395</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon pending-icon">⏳</div>
+          <div class="tx-body">
+            <div class="tx-name">50% Livraison — LOT-8821</div>
+            <div class="tx-sub">Libéré à confirmation GPS</div>
+          </div>
+          <div class="tx-amount amber">+3,395</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon debit">⛽</div>
+          <div class="tx-body">
+            <div class="tx-name">Carte carburant Afriquia</div>
+            <div class="tx-sub">05/04/2026 · Station Béni Mellal N8</div>
+          </div>
+          <div class="tx-amount red">−480</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon credit">✅</div>
+          <div class="tx-body">
+            <div class="tx-name">LOT-8780 — Fès → Casa (complet)</div>
+            <div class="tx-sub">03/04/2026 · Frais plateforme: −165</div>
+          </div>
+          <div class="tx-amount green">+5,335</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon debit">🏦</div>
+          <div class="tx-body">
+            <div class="tx-name">Retrait Agent Cash — Béni Mellal</div>
+            <div class="tx-sub">03/04/2026 · Code SHL-6612</div>
+          </div>
+          <div class="tx-amount red">−5,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════
+         SCREEN: PROFILE
+    ══════════════════════ -->
+    <div id="screen-profile" class="screen">
+      <div class="screen-header">
+        <div class="screen-title">Mon Profil</div>
+      </div>
+
+      <div class="profile-hero">
+        <div class="profile-avatar">🧔</div>
+        <div>
+          <div class="profile-name">Mustapha Benali</div>
+          <div class="profile-phone">+212 6 61 xx xx xx</div>
+          <div class="profile-tier">🥉 Bronze — 52% complété</div>
+        </div>
+      </div>
+
+      <!-- Score summary -->
+      <div class="card card-pad" style="margin:0 16px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div style="font-size:15px;font-weight:800;">Score de confiance</div>
+          <div style="font-size:26px;font-weight:900;color:var(--amber);">68<span style="font-size:14px;color:var(--text3);font-weight:500;">/100</span></div>
+        </div>
+        <div style="height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;margin-bottom:10px;">
+          <div style="width:68%;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:4px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);">
+          <span>⭐ 4.8 · 12 voyages</span>
+          <span>99% ponctualité GPS</span>
+        </div>
+      </div>
+
+      <!-- Doc status quick view -->
+      <div class="section-label">État des documents</div>
+      <div class="card" style="margin:0 16px 12px;">
+        <div style="padding:6px 0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);" onclick="showScreen('docs')">
+            <span style="font-size:14px;">🪪 CIN</span><span style="color:var(--green);font-weight:700;font-size:13px;">✓ Vérifié</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);" onclick="showScreen('docs')">
+            <span style="font-size:14px;">📄 Carte grise</span><span style="color:var(--amber);font-weight:700;font-size:13px;">⏳ En attente</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);" onclick="showScreen('docs')">
+            <span style="font-size:14px;">🛡️ Assurance RC</span><span style="color:var(--red);font-weight:700;font-size:13px;">✗ Manquant</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);" onclick="showScreen('docs')">
+            <span style="font-size:14px;">🔧 Visite technique</span><span style="color:var(--red);font-weight:700;font-size:13px;">✗ Expirée</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;" onclick="showScreen('docs')">
+            <span style="font-size:14px;">📋 CNSS</span><span style="color:var(--text3);font-weight:700;font-size:13px;">○ Optionnel</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin:0 16px;">
+        <button style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:14px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;margin-bottom:10px;" onclick="showToast('📞 Support','Agent TriqLog · WhatsApp: +212 5xx-xxxxxx · Disponible 07h–21h')">
+          📞 Contacter le support TriqLog
+        </button>
+        <button style="width:100%;background:transparent;border:1px solid rgba(231,76,60,0.2);border-radius:12px;padding:14px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--red);cursor:pointer;" onclick="showToast('🚪 Déconnexion','Au revoir, Mustapha !')">
+          Déconnexion
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end scroll-area -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-tab active" id="tab-home" onclick="showScreen('home');setTab('tab-home')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Accueil</span>
+    </button>
+    <button class="nav-tab" id="tab-loads" onclick="showScreen('loads');setTab('tab-loads')" style="position:relative;">
+      <span class="tab-icon">📦</span>
+      <span class="tab-label">Chargements</span>
+      <span class="nav-tab-badge">4</span>
+    </button>
+    <button class="nav-tab" id="tab-docs" onclick="showScreen('docs');setTab('tab-docs')" style="position:relative;">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Documents</span>
+      <span class="nav-tab-badge" style="background:var(--amber);">!</span>
+    </button>
+    <button class="nav-tab" id="tab-wallet" onclick="showScreen('wallet');setTab('tab-wallet')">
+      <span class="tab-icon">💰</span>
+      <span class="tab-label">Argent</span>
+    </button>
+    <button class="nav-tab" id="tab-profile" onclick="showScreen('profile');setTab('tab-profile')">
+      <span class="tab-icon">👤</span>
+      <span class="tab-label">Profil</span>
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toastEl">
+    <div class="toast-title" id="toastTitle"></div>
+    <div class="toast-body" id="toastBody"></div>
+  </div>
+</div>
+
+<script>
+// ── Clock ──
+function updateTime() {
+  const now = new Date();
+  document.getElementById('liveTime').textContent =
+    now.getHours().toString().padStart(2,'0') + ':' +
+    now.getMinutes().toString().padStart(2,'0');
+}
+updateTime(); setInterval(updateTime, 10000);
+
+// ── Navigation ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  document.getElementById('scrollArea').scrollTop = 0;
+}
+function setTab(id) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Toast ──
+function showToast(title, body) {
+  const el = document.getElementById('toastEl');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── GPS ──
+let gpsWatcher = null;
+let gpsActive = false;
+
+function startGPS() {
+  if (!navigator.geolocation) {
+    showToast('❌ GPS','Ce téléphone ne supporte pas le GPS.');
+    return;
+  }
+  showToast('📍 GPS','Activation en cours…');
+  gpsWatcher = navigator.geolocation.watchPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(4);
+      const lng = pos.coords.longitude.toFixed(4);
+      const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : Math.floor(60 + Math.random()*30);
+      document.getElementById('gpsCoords').textContent = lat + '°N ' + Math.abs(lng) + '°W';
+      document.getElementById('gpsSpeed').textContent = speed;
+      document.getElementById('gpsIcon').textContent = '📍';
+      gpsActive = true;
+      document.getElementById('gpsStatusBar').style.background = 'rgba(46,204,113,0.08)';
+      showToast('✅ GPS Actif','Position partagée avec le chargeur en temps réel.');
+    },
+    err => {
+      showToast('⚠️ GPS','Accès GPS refusé. Activez la localisation dans les paramètres Android.');
+    },
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+}
+
+// Auto-try GPS on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (navigator.geolocation) startGPS();
+  }, 1000);
+});
+
+// Simulate GPS movement when real GPS unavailable
+function simulateGPS() {
+  const speeds = [62,68,74,71,79,83,75,70,66];
+  const dists = [148,145,141,137,132,128,123,119,115];
+  const etas = ['2h14','2h10','2h05','2h01','1h56','1h51','1h46','1h42','1h38'];
+  let i = 0;
+  setInterval(() => {
+    if (!gpsActive) {
+      document.getElementById('gpsSpeed').textContent = speeds[i % speeds.length];
+      document.getElementById('gpsDist').textContent = dists[i % dists.length];
+      document.getElementById('gpsEta').textContent = etas[i % etas.length];
+      const lat = (31.0 + i * 0.01).toFixed(4);
+      document.getElementById('gpsCoords').textContent = lat + '°N 6.35°W';
+      i++;
+    }
+  }, 4000);
+}
+simulateGPS();
+
+// ── Doc helpers ──
+function toggleDoc(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+function showSkipConfirm(id, name) {
+  hideAllExtras();
+  const el = document.getElementById(id);
+  if (el) el.classList.add('show');
+}
+function hideSkip(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+function showObtainHelp(id, name) {
+  hideAllExtras();
+  const el = document.getElementById(id);
+  if (el) el.classList.add('show');
+}
+function hideAllExtras() {
+  document.querySelectorAll('.skip-confirm,.obtain-help').forEach(e => e.classList.remove('show'));
+}
+function markSkipped(docId) {
+  const card = document.getElementById(docId);
+  if (!card) return;
+  const icon = card.querySelector('.doc-icon');
+  const status = card.querySelector('.doc-status');
+  if (icon) { icon.className = 'doc-icon skipped'; icon.textContent = '—'; }
+  if (status) { status.className = 'doc-status grey'; status.textContent = '○ Marqué comme non disponible'; }
+  hideAllExtras();
+}
+
+// ── Upload trigger (camera on Android) ──
+function triggerUpload(type) {
+  const names = { cin:'CIN', cg:'Carte grise', assurance:'Assurance RC', visite:'Visite technique', cnss:'CNSS' };
+  // Create input to open camera
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.capture = 'environment'; // rear camera on Android
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      showToast('📸 Photo reçue', names[type] + ' envoyée · Vérification sous 2h');
+      // Update doc status
+      const card = document.getElementById('doc-' + type.replace('cg','cg'));
+      if (card) {
+        const icon = card.querySelector('.doc-icon');
+        const status = card.querySelector('.doc-status');
+        if (icon) { icon.className = 'doc-icon pending'; }
+        if (status) { status.className = 'doc-status amber'; status.textContent = '⏳ En cours de vérification'; }
+      }
+    }
+  };
+  input.click();
+}
+
+// ── Accept load ──
+function acceptLoad(id, route, gross) {
+  const fee = Math.round(gross * 0.03);
+  const net = gross - fee;
+  const half = Math.round(net / 2);
+  showToast('✅ Chargement accepté !',
+    id + ' · ' + route + ' · MAD ' + half.toLocaleString() + ' versés maintenant');
+  setTimeout(() => {
+    showScreen('home');
+    setTab('tab-home');
+  }, 1500);
+}
+
+// ── Confirm delivery ──
+function confirmDelivery() {
+  showToast('🎉 Livraison confirmée !', 'MAD 3,395 libérés automatiquement. Bien joué !');
+  document.getElementById('deliverySplitStatus').className = 'split-status paid';
+  document.getElementById('deliverySplitStatus').textContent = '✓ Reçu';
+  setTimeout(() => {
+    document.querySelector('.wallet-amount').textContent = 'MAD 6,790';
+    document.querySelector('.wallet-pending').innerHTML = '+ <span>MAD 0</span> en attente';
+  }, 1200);
+}
+
+// ── Payment method selector ──
+function selectPMethod(el) {
+  document.querySelectorAll('.pmethod-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const names = {
+    'Agent Cash': ['💵 Retirer MAD 3,395 — Agent Cash', '💵 Retirer MAD 3,395'],
+    'Wafacash': ['📱 Retirer via Wafacash', '📱 Retirer via Wafacash'],
+    'CIH Mobile': ['🏦 Virer vers CIH', '🏦 Virer vers CIH Mobile'],
+    'Afriquia': ['⛽ Recharger carte carburant', '⛽ Recharger carte Afriquia'],
+  };
+  const name = el.querySelector('.pmethod-name').textContent;
+  const btn = el.closest('.screen').querySelector('button[onclick*="Retirer"]');
+  if (btn && names[name]) btn.textContent = names[name][1] + ' — MAD 3,395';
+}
+</script>
+</body>
+</html>

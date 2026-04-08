@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TriqLog — Payment Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#09090F;--bg2:#0E1018;--bg3:#13151F;
+  --surface:#181B28;--surface2:#1E2235;--surface3:#242840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
+  --amber:#F0B429;--amber2:#FFD166;--amber-dim:rgba(240,180,41,0.12);--amber-glow:rgba(240,180,41,0.05);
+  --green:#22C55E;--green2:#4ADE80;--green-dim:rgba(34,197,94,0.11);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.1);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,0.1);
+  --purple:#C084FC;--purple-dim:rgba(192,132,252,0.1);
+  --teal:#2DD4BF;--teal-dim:rgba(45,212,191,0.1);
+  --orange:#FB923C;--orange-dim:rgba(251,146,60,0.1);
+  --text:#EEF0FA;--text2:#8891AE;--text3:#454C6A;--text4:#272D42;
+  --r:16px;--r-sm:10px;--r-xs:8px;
+  --shadow:0 8px 32px rgba(0,0,0,0.5);--shadow-lg:0 20px 60px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 15% 15%,rgba(240,180,41,0.04) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 85% 85%,rgba(34,197,94,0.03) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 60px;}
+
+/* ── HEADER ── */
+.header{display:flex;align-items:center;justify-content:space-between;padding:28px 0 32px;border-bottom:1px solid var(--border);margin-bottom:32px;}
+.hdr-left{display:flex;align-items:center;gap:14px;}
+.hdr-icon{width:50px;height:50px;background:linear-gradient(135deg,var(--amber),#C07A10);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 20px rgba(240,180,41,0.3);}
+.hdr-title{font-size:22px;font-weight:900;letter-spacing:-0.5px;}
+.hdr-title span{color:var(--amber);}
+.hdr-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.hdr-stats{display:flex;gap:10px;}
+.hdr-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center;}
+.hdr-stat-val{font-size:17px;font-weight:800;}
+.hdr-stat-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:1px;}
+
+/* ── LOAD TYPE SELECTOR ── */
+.type-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;}
+.type-card{
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:var(--r);padding:20px;cursor:pointer;
+  transition:all .25s;position:relative;overflow:hidden;
+}
+.type-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s;}
+.type-card.active-a::before{background:linear-gradient(135deg,rgba(240,180,41,0.06),transparent);opacity:1;}
+.type-card.active-b::before{background:linear-gradient(135deg,rgba(192,132,252,0.06),transparent);opacity:1;}
+.type-card.sel-a{border-color:var(--amber);}
+.type-card.sel-b{border-color:var(--purple);}
+.tc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.tc-badge{padding:3px 12px;border-radius:100px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.tc-badge.a{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,180,41,0.3);}
+.tc-badge.b{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);}
+.tc-title{font-size:17px;font-weight:900;}
+.tc-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px;}
+.tc-examples{display:flex;gap:6px;flex-wrap:wrap;}
+.tc-ex{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.tc-select-hint{position:absolute;top:16px;right:16px;font-size:18px;opacity:0.3;transition:opacity .2s;}
+.type-card.sel-a .tc-select-hint,.type-card.sel-b .tc-select-hint{opacity:1;color:var(--amber);}
+.type-card.sel-b .tc-select-hint{color:var(--purple);}
+
+/* ── MAIN PAYMENT DISPLAY ── */
+.payment-engine{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px;}
+.pe-header{padding:18px 22px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.pe-load-info{display:flex;flex-direction:column;gap:3px;}
+.pe-load-route{font-size:16px;font-weight:800;}
+.pe-load-meta{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.pe-gross{text-align:right;}
+.pe-gross-lbl{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;}
+.pe-gross-val{font-size:22px;font-weight:900;color:var(--text);}
+.pe-gross-sub{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+
+/* Fee deduction bar */
+.fee-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 22px;background:rgba(239,68,68,0.04);
+  border-bottom:1px solid var(--border);font-size:12px;
+}
+.fee-left{display:flex;align-items:center;gap:8px;color:var(--text2);}
+.fee-chip{background:var(--red-dim);color:var(--red);border-radius:100px;padding:2px 10px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.fee-net{font-weight:800;color:var(--green);font-size:14px;}
+
+/* ── WATERFALL ── */
+.waterfall{padding:22px;}
+.wf-title{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-family:'IBM Plex Mono',monospace;margin-bottom:16px;}
+
+.wf-track{display:flex;flex-direction:column;gap:0;}
+.wf-step{
+  display:flex;gap:16px;padding-bottom:0;
+  position:relative;
+}
+.wf-step:not(:last-child) .wf-line{
+  position:absolute;left:19px;top:40px;width:2px;
+  background:var(--border);z-index:0;
+}
+.wf-step.released .wf-line{background:var(--green);}
+.wf-step.pending-step .wf-line{background:linear-gradient(180deg,var(--amber),var(--border));}
+.wf-step.waiting-step .wf-line{background:linear-gradient(180deg,var(--purple),var(--border));}
+
+.wf-circle{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;z-index:1;
+  border:2px solid var(--border2);background:var(--surface2);
+  transition:all .4s;
+}
+.wf-step.released .wf-circle{background:var(--green);border-color:var(--green);font-size:14px;}
+.wf-step.pending-step .wf-circle{background:var(--amber);border-color:var(--amber);color:#0A0700;box-shadow:0 0 16px rgba(240,180,41,0.35);}
+.wf-step.waiting-step .wf-circle{background:var(--purple-dim);border-color:rgba(192,132,252,0.4);color:var(--purple);}
+.wf-step.early-step .wf-circle{background:var(--teal-dim);border-color:rgba(45,212,191,0.4);color:var(--teal);}
+
+.wf-content{flex:1;padding-bottom:22px;}
+.wf-content-inner{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:14px 16px;
+  transition:border-color .3s;
+}
+.wf-step.released .wf-content-inner{border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.04);}
+.wf-step.pending-step .wf-content-inner{border-color:rgba(240,180,41,0.25);background:rgba(240,180,41,0.04);}
+.wf-step.waiting-step .wf-content-inner{border-color:rgba(192,132,252,0.2);}
+.wf-step.early-step .wf-content-inner{border-color:rgba(45,212,191,0.2);background:rgba(45,212,191,0.03);}
+
+.wf-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.wf-left{flex:1;}
+.wf-step-title{font-size:14px;font-weight:800;margin-bottom:3px;}
+.wf-step-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+.wf-step-meta{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:5px;}
+.wf-right{text-align:right;flex-shrink:0;}
+.wf-amount{font-size:22px;font-weight:900;}
+.wf-amount.green{color:var(--green);}
+.wf-amount.amber{color:var(--amber);}
+.wf-amount.purple{color:var(--purple);}
+.wf-amount.teal{color:var(--teal);}
+.wf-pct{font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.wf-status{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:6px;border-radius:100px;padding:3px 10px;
+  font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;
+}
+.wf-status.paid{background:var(--green-dim);color:var(--green);}
+.wf-status.counting{background:var(--amber-dim);color:var(--amber);}
+.wf-status.holding{background:var(--purple-dim);color:var(--purple);}
+.wf-status.available{background:var(--teal-dim);color:var(--teal);}
+.wf-status.waiting{background:rgba(255,255,255,0.06);color:var(--text3);}
+
+/* Countdown timer */
+.countdown-wrap{
+  margin-top:10px;padding:10px 12px;
+  background:rgba(240,180,41,0.06);border:1px solid rgba(240,180,41,0.15);
+  border-radius:var(--r-xs);display:flex;align-items:center;gap:10px;
+}
+.cd-label{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;}
+.cd-timer{font-size:20px;font-weight:900;color:var(--amber);font-family:'IBM Plex Mono',monospace;letter-spacing:2px;}
+.cd-bar-wrap{flex:1;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+.cd-bar{height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:3px;transition:width .5s ease;}
+
+/* Corporate hold countdown */
+.hold-countdown{
+  margin-top:10px;padding:10px 12px;
+  background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.15);
+  border-radius:var(--r-xs);
+}
+.hc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.hc-label{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;}
+.hc-days{font-size:16px;font-weight:800;color:var(--purple);}
+.hc-bar-wrap{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.hc-bar{height:100%;background:linear-gradient(90deg,var(--purple),#E0AAFF);border-radius:2px;}
+
+/* QuickPay / Early release panel */
+.early-release-panel{
+  margin-top:10px;
+  background:linear-gradient(135deg,#0E1A12,#0A1410);
+  border:1px solid rgba(45,212,191,0.2);border-radius:var(--r-xs);
+  overflow:hidden;
+}
+.erp-header{
+  padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(45,212,191,0.1);
+}
+.erp-title{font-size:12px;font-weight:800;color:var(--teal);}
+.erp-badge{background:rgba(45,212,191,0.1);color:var(--teal);border:1px solid rgba(45,212,191,0.25);border-radius:100px;padding:2px 10px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.erp-calc{padding:12px 14px;}
+.erp-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.erp-row:last-child{border-bottom:none;}
+.erp-lbl{color:var(--text2);}
+.erp-val{font-weight:700;}
+.erp-val.green{color:var(--green);}
+.erp-val.red{color:var(--red);}
+.erp-val.teal{color:var(--teal);}
+.erp-row.total-row{padding-top:8px;font-weight:900;font-size:13px;}
+.erp-btn{
+  display:flex;width:calc(100% - 28px);margin:0 14px 12px;
+  background:linear-gradient(135deg,var(--teal),#1A9E8A);
+  color:#021410;border:none;border-radius:8px;padding:10px;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;
+  cursor:pointer;align-items:center;justify-content:center;gap:6px;
+  transition:all .2s;
+}
+.erp-btn:active{transform:scale(0.97);}
+
+/* 24h dispute panel */
+.dispute-panel{
+  margin-top:10px;
+  background:rgba(251,146,60,0.05);border:1px solid rgba(251,146,60,0.15);
+  border-radius:var(--r-xs);padding:11px 13px;
+}
+.dp-title{font-size:11px;font-weight:800;color:var(--orange);margin-bottom:6px;}
+.dp-text{font-size:11px;color:var(--text2);line-height:1.5;}
+.dp-btns{display:flex;gap:8px;margin-top:10px;}
+.dp-btn-raise{flex:1;background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.dp-btn-ok{flex:1;background:var(--green-dim);color:var(--green);border:1px solid rgba(34,197,94,0.25);border-radius:8px;padding:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+
+/* ── SUMMARY BAR ── */
+.summary-bar{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px 20px;margin-bottom:20px;
+  display:flex;gap:0;
+}
+.sb-cell{flex:1;text-align:center;border-right:1px solid var(--border);padding:0 12px;}
+.sb-cell:first-child{padding-left:0;}
+.sb-cell:last-child{border-right:none;padding-right:0;}
+.sb-label{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;}
+.sb-val{font-size:18px;font-weight:900;}
+.sb-val.green{color:var(--green);}
+.sb-val.amber{color:var(--amber);}
+.sb-val.purple{color:var(--purple);}
+.sb-val.teal{color:var(--teal);}
+.sb-val.red{color:var(--red);}
+.sb-sub{font-size:10px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+
+/* ── LOAD CALCULATOR ── */
+.calculator{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:20px;
+}
+.calc-header{
+  padding:16px 20px;background:var(--surface2);border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.calc-title{font-size:14px;font-weight:800;}
+.calc-body{padding:20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+@media(max-width:700px){.calc-body{grid-template-columns:1fr 1fr;}}
+@media(max-width:450px){.calc-body{grid-template-columns:1fr;}}
+
+.calc-field{display:flex;flex-direction:column;gap:6px;}
+.calc-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-family:'IBM Plex Mono',monospace;}
+.calc-input{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:var(--r-sm);padding:11px 14px;
+  font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:var(--text);
+  outline:none;transition:border-color .2s;width:100%;
+}
+.calc-input:focus{border-color:var(--amber);}
+select.calc-input{cursor:pointer;}
+
+.calc-result{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,#101A10,#0C1410);
+  border:1px solid rgba(34,197,94,0.2);border-radius:var(--r-sm);
+  padding:16px;
+}
+.cr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+@media(max-width:500px){.cr-grid{grid-template-columns:1fr 1fr;}}
+.cr-cell{text-align:center;}
+.cr-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.cr-val{font-size:16px;font-weight:900;}
+
+/* ── HISTORY TABLE ── */
+.history-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.ht-header{padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:13px;font-weight:800;}
+.ht-row{display:grid;grid-template-columns:110px 1fr 90px 90px 90px 90px;gap:0;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center;font-size:12px;cursor:pointer;transition:background .15s;}
+.ht-row:last-child{border-bottom:none;}
+.ht-row:hover{background:rgba(255,255,255,0.02);}
+.ht-head{background:var(--surface2);border-bottom:1px solid var(--border2);font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;font-family:'IBM Plex Mono',monospace;cursor:default;}
+.ht-head:hover{background:var(--surface2);}
+.ht-lot{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--amber);}
+.ht-route{font-weight:700;}
+.ht-sub{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.pill{display:inline-flex;align-items:center;gap:3px;border-radius:100px;padding:2px 9px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.pill-g{background:var(--green-dim);color:var(--green);}
+.pill-a{background:var(--amber-dim);color:var(--amber);}
+.pill-p{background:var(--purple-dim);color:var(--purple);}
+.pill-t{background:var(--teal-dim);color:var(--teal);}
+.pill-r{background:var(--red-dim);color:var(--red);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--amber);border-radius:12px;padding:14px 18px;box-shadow:var(--shadow-lg);transform:translateX(120%);opacity:0;transition:all .35s ease;max-width:320px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast-title{font-weight:800;font-size:13px;color:var(--amber);margin-bottom:3px;}
+.toast-body{font-size:12px;color:var(--text2);}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="hdr-left">
+      <div class="hdr-icon">💳</div>
+      <div>
+        <div class="hdr-title">Shahi<span>Log</span> — Payment Engine</div>
+        <div class="hdr-sub">Moteur de paiement · 3 options · GPS-triggered · Anti-fraude</div>
+      </div>
+    </div>
+    <div class="hdr-stats">
+      <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--green);">MAD 847K</div><div class="hdr-stat-lbl">En transit</div></div>
+      <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--amber);">47</div><div class="hdr-stat-lbl">Lots actifs</div></div>
+      <div class="hdr-stat"><div class="hdr-stat-val" style="color:var(--teal);">12</div><div class="hdr-stat-lbl">Early releases</div></div>
+    </div>
+  </div>
+
+  <!-- LOAD TYPE SELECTOR -->
+  <div class="type-selector">
+    <div class="type-card active-a sel-a" id="card-a" onclick="selectType('a')">
+      <div class="tc-select-hint">✓</div>
+      <div class="tc-top">
+        <div class="tc-badge a">🥉 Option A — Informel</div>
+      </div>
+      <div class="tc-title">Chargeurs informels &amp; PME</div>
+      <div class="tc-desc">50% immédiat · 25% après 60 min GPS · 25% après fenêtre 24h anti-fraude. Paiement cash, Wafacash ou virement simple.</div>
+      <div class="tc-examples">
+        <div class="tc-ex">Petits commerçants</div>
+        <div class="tc-ex">Marchands de souk</div>
+        <div class="tc-ex">PME locales</div>
+        <div class="tc-ex">Agriculteurs</div>
+      </div>
+    </div>
+    <div class="type-card" id="card-b" onclick="selectType('b')">
+      <div class="tc-select-hint">○</div>
+      <div class="tc-top">
+        <div class="tc-badge b">⭐ Option B+C — Corporate</div>
+      </div>
+      <div class="tc-title">Grands comptes &amp; Industriels</div>
+      <div class="tc-desc">50% immédiat (TriqLog float) · 25% après 60 min GPS · 25% retenu jusqu'au règlement Net 30/60. Early release disponible −5%.</div>
+      <div class="tc-examples">
+        <div class="tc-ex">OCP Group</div>
+        <div class="tc-ex">Stellantis Maroc</div>
+        <div class="tc-ex">Cosumar</div>
+        <div class="tc-ex">Ingelec</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULATOR -->
+  <div class="calculator">
+    <div class="calc-header">
+      <div class="calc-title">🧮 Simulateur de lot</div>
+      <span style="font-size:12px;color:var(--text3);">Modifiez les valeurs — tout se recalcule en temps réel</span>
+    </div>
+    <div class="calc-body">
+      <div class="calc-field">
+        <div class="calc-label">Montant brut du lot (MAD)</div>
+        <input class="calc-input" type="number" id="grossInput" value="7000" oninput="recalc()">
+      </div>
+      <div class="calc-field">
+        <div class="calc-label">Type de chargeur</div>
+        <select class="calc-input" id="typeSelect" onchange="recalc();selectType(this.value==='corporate'?'b':'a')">
+          <option value="informal">Informel / PME</option>
+          <option value="corporate">Corporate (Net 30/60)</option>
+        </select>
+      </div>
+      <div class="calc-field" id="netTermsField" style="display:none;">
+        <div class="calc-label">Délai de règlement</div>
+        <select class="calc-input" id="netSelect" onchange="recalc()">
+          <option value="30">Net 30 jours</option>
+          <option value="60">Net 60 jours</option>
+        </select>
+      </div>
+      <div class="calc-result">
+        <div class="cr-grid">
+          <div class="cr-cell"><div class="cr-lbl">Frais plateforme 3%</div><div class="cr-val" id="cr-fee" style="color:var(--red);">−MAD 210</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Net chauffeur</div><div class="cr-val" id="cr-net" style="color:var(--green);">MAD 6,790</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Tranche 1 — Immédiat</div><div class="cr-val" id="cr-t1" style="color:var(--green);">MAD 3,395</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Tranche 2 — 60 min GPS</div><div class="cr-val" id="cr-t2" style="color:var(--amber);">MAD 1,698</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Tranche 3 — Final</div><div class="cr-val" id="cr-t3" style="color:var(--purple);">MAD 1,698</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Early release −5%</div><div class="cr-val" id="cr-early" style="color:var(--teal);">MAD 1,613</div></div>
+          <div class="cr-cell"><div class="cr-lbl">Frais early (5%)</div><div class="cr-val" id="cr-early-fee" style="color:var(--red);">−MAD 85</div></div>
+          <div class="cr-cell"><div class="cr-lbl" id="cr-t3-label">T3 libérée dans</div><div class="cr-val" id="cr-t3-when" style="color:var(--text2);font-size:13px;">24 heures</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY BAR -->
+  <div class="summary-bar" id="summaryBar">
+    <div class="sb-cell"><div class="sb-label">Lot</div><div class="sb-val" style="color:var(--text);font-size:14px;">LOT-8821</div><div class="sb-sub">Béni Mellal → Casa</div></div>
+    <div class="sb-cell"><div class="sb-label">Brut</div><div class="sb-val">MAD 7,000</div><div class="sb-sub">Frais −3%: 210</div></div>
+    <div class="sb-cell"><div class="sb-label">✓ Reçu (50%)</div><div class="sb-val green" id="sb-t1">MAD 3,395</div><div class="sb-sub">Versé à acceptation</div></div>
+    <div class="sb-cell"><div class="sb-label">⏳ 60 min GPS (25%)</div><div class="sb-val amber" id="sb-t2">MAD 1,698</div><div class="sb-sub" id="sb-t2-sub">Auto-libéré après 60 min</div></div>
+    <div class="sb-cell"><div class="sb-label" id="sb-t3-label">🔒 Fenêtre 24h (25%)</div><div class="sb-val purple" id="sb-t3">MAD 1,698</div><div class="sb-sub" id="sb-t3-sub">Libéré J+1 si pas de litige</div></div>
+    <div class="sb-cell"><div class="sb-label">Total net</div><div class="sb-val green" style="font-size:20px;" id="sb-total">MAD 6,790</div><div class="sb-sub">Après frais plateforme</div></div>
+  </div>
+
+  <!-- MAIN WATERFALL — OPTION A -->
+  <div id="waterfall-a" class="payment-engine">
+    <div class="pe-header">
+      <div class="pe-load-info">
+        <div class="pe-load-route">🚛 LOT-8821 · Béni Mellal → Casablanca</div>
+        <div class="pe-load-meta">Bricoma SARL · 22T · Hassan Benali · 🥉 Bronze</div>
+      </div>
+      <div class="pe-gross">
+        <div class="pe-gross-lbl">Montant brut</div>
+        <div class="pe-gross-val" id="gross-a">MAD 7,000</div>
+        <div class="pe-gross-sub">Option A · Informel</div>
+      </div>
+    </div>
+    <div class="fee-bar">
+      <div class="fee-left"><div class="fee-chip">−3% FRAIS PLATEFORME</div><span style="color:var(--text2);">MAD 7,000 × 3% = <span id="fee-a">MAD 210</span> déduits sur la Tranche 1</span></div>
+      <div class="fee-net">Net chauffeur: <span id="net-a">MAD 6,790</span></div>
+    </div>
+    <div class="waterfall">
+      <div class="wf-title">Cascade de paiement — Option A · Informel</div>
+      <div class="wf-track">
+
+        <!-- T1: Immédiat -->
+        <div class="wf-step released" id="wf-a-t1">
+          <div class="wf-line" style="height:100px;"></div>
+          <div class="wf-circle">✓</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 1 — Acceptation du lot</div>
+                  <div class="wf-step-desc">Versé immédiatement à l'acceptation du chargement par le chauffeur. Frais plateforme (3%) déduits ici.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : Chauffeur appuie "Accepter" · Immédiat · Cash / Wafacash / Agent</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount green" id="wf-a-t1-amt">MAD 3,395</div>
+                  <div class="wf-pct" style="color:var(--green);">50% net</div>
+                  <div class="wf-status paid">✓ Versé</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- T2: 60 min GPS -->
+        <div class="wf-step pending-step" id="wf-a-t2">
+          <div class="wf-line" style="height:160px;"></div>
+          <div class="wf-circle">⏱️</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 2 — GPS arrivée + 60 minutes</div>
+                  <div class="wf-step-desc">Dès que le GPS confirme l'arrivée à ≤500m de la destination, un minuteur de 60 minutes démarre. Libération automatique à l'expiration — aucune action requise.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : GPS ≤500m → compte à rebours 60 min → auto-release</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount amber" id="wf-a-t2-amt">MAD 1,698</div>
+                  <div class="wf-pct" style="color:var(--amber);">25% net</div>
+                  <div class="wf-status counting" id="wf-a-t2-status">⏳ Compte à rebours</div>
+                </div>
+              </div>
+              <!-- Countdown -->
+              <div class="countdown-wrap">
+                <div class="cd-label">Auto-libéré dans</div>
+                <div class="cd-timer" id="cd-a-timer">00:43:17</div>
+                <div class="cd-bar-wrap"><div class="cd-bar" id="cd-a-bar" style="width:28%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- T3: 24h dispute window -->
+        <div class="wf-step" id="wf-a-t3">
+          <div class="wf-circle">🛡️</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 3 — Fenêtre anti-fraude 24h</div>
+                  <div class="wf-step-desc">Après la livraison GPS, le chargeur a 24 heures pour signaler un litige (marchandise endommagée, quantité incorrecte). Sans litige, libération automatique à J+1. Avec litige, TriqLog arbitre avec les preuves GPS + photos.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : GPS livraison confirmée → 24h sans litige → auto-release J+1</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount" style="color:var(--text3);" id="wf-a-t3-amt">MAD 1,698</div>
+                  <div class="wf-pct" style="color:var(--text3);">25% net</div>
+                  <div class="wf-status waiting">🔒 Attend T2</div>
+                </div>
+              </div>
+              <!-- Dispute panel -->
+              <div class="dispute-panel">
+                <div class="dp-title">🛡️ Fenêtre litige — Active 24h après GPS livraison</div>
+                <div class="dp-text">Le chargeur peut signaler un problème dans les 24h. TriqLog examine les preuves GPS, horodatage, et photos éventuelles. En l'absence de signal, MAD 1,698 sont virés automatiquement à J+1 00:00.</div>
+                <div class="dp-btns">
+                  <button class="dp-btn-raise" onclick="showToast('⚠️ Litige','Litige ouvert. TriqLog examinera les preuves GPS sous 2h.')">⚠️ Signaler un litige</button>
+                  <button class="dp-btn-ok" onclick="showToast('✅ Confirmé','Livraison validée. MAD 1,698 libérés maintenant.')">✅ Confirmer livraison</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WATERFALL — OPTION B+C -->
+  <div id="waterfall-b" class="payment-engine" style="display:none;">
+    <div class="pe-header">
+      <div class="pe-load-info">
+        <div class="pe-load-route">🚛 LOT-9104 · Tanger Med → Casablanca ZI</div>
+        <div class="pe-load-meta">Stellantis Maroc · 23T · Hassan Benali · ⭐ Premium · Net 30</div>
+      </div>
+      <div class="pe-gross">
+        <div class="pe-gross-lbl">Montant brut</div>
+        <div class="pe-gross-val" id="gross-b">MAD 7,000</div>
+        <div class="pe-gross-sub">Option B+C · Corporate</div>
+      </div>
+    </div>
+    <div class="fee-bar">
+      <div class="fee-left"><div class="fee-chip">−3% FRAIS PLATEFORME</div><span style="color:var(--text2);">TriqLog avance la totalité — recouvre auprès de Stellantis à J+30</span></div>
+      <div class="fee-net">Net chauffeur: <span id="net-b">MAD 6,790</span></div>
+    </div>
+    <div class="waterfall">
+      <div class="wf-title">Cascade de paiement — Option B · Corporate + Option C · Early Release</div>
+      <div class="wf-track">
+
+        <!-- T1: Immédiat — TriqLog float -->
+        <div class="wf-step released" id="wf-b-t1">
+          <div class="wf-line" style="height:120px;"></div>
+          <div class="wf-circle">✓</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 1 — TriqLog avance 50% immédiatement</div>
+                  <div class="wf-step-desc">TriqLog avance la Tranche 1 depuis son fonds de roulement. Le chauffeur reçoit 50% dès l'acceptation même si Stellantis ne paie qu'à J+30. Frais 3% déduits ici.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : Acceptation · TriqLog float → Chauffeur immédiat · Remboursé par Stellantis J+30</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount green" id="wf-b-t1-amt">MAD 3,395</div>
+                  <div class="wf-pct" style="color:var(--green);">50% net</div>
+                  <div class="wf-status paid">✓ Versé</div>
+                </div>
+              </div>
+              <div style="margin-top:10px;background:rgba(192,132,252,0.06);border:1px solid rgba(192,132,252,0.15);border-radius:var(--r-xs);padding:10px 12px;font-size:11px;color:var(--text2);">
+                <strong style="color:var(--purple);">💡 TriqLog Float :</strong> La plateforme absorbe le délai de paiement corporate. Pour le chauffeur, c'est invisible — il est payé immédiatement comme toujours.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- T2: 60 min GPS -->
+        <div class="wf-step pending-step" id="wf-b-t2">
+          <div class="wf-line" style="height:120px;"></div>
+          <div class="wf-circle">⏱️</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 2 — GPS arrivée + 60 minutes</div>
+                  <div class="wf-step-desc">Identique à l'Option A — GPS confirme l'arrivée, 60 minutes s'écoulent, libération automatique. Même pour les corporates, cette tranche est libérée par TriqLog sans attendre le règlement.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : GPS ≤500m → 60 min → auto-release · TriqLog float</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount amber" id="wf-b-t2-amt">MAD 1,698</div>
+                  <div class="wf-pct" style="color:var(--amber);">25% net</div>
+                  <div class="wf-status counting">⏳ Compte à rebours</div>
+                </div>
+              </div>
+              <div class="countdown-wrap">
+                <div class="cd-label">Auto-libéré dans</div>
+                <div class="cd-timer" id="cd-b-timer">00:43:17</div>
+                <div class="cd-bar-wrap"><div class="cd-bar" id="cd-b-bar" style="width:28%;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- T3: Corporate hold + Early release -->
+        <div class="wf-step waiting-step" id="wf-b-t3">
+          <div class="wf-circle">🏢</div>
+          <div class="wf-content">
+            <div class="wf-content-inner">
+              <div class="wf-row">
+                <div class="wf-left">
+                  <div class="wf-step-title">Tranche 3 — Règlement corporate Net 30</div>
+                  <div class="wf-step-desc">Cette tranche attend le règlement de Stellantis Maroc. Quand Stellantis paie (J+30 ou J+60), TriqLog libère automatiquement les fonds au chauffeur. <strong>Ou</strong> — le chauffeur peut demander un Early Release maintenant avec un frais de 5%.</div>
+                  <div class="wf-step-meta">DÉCLENCHEUR : Règlement Stellantis J+30 → auto-release · OU Early Release demandé par chauffeur</div>
+                </div>
+                <div class="wf-right">
+                  <div class="wf-amount purple" id="wf-b-t3-amt">MAD 1,698</div>
+                  <div class="wf-pct" style="color:var(--purple);">25% net</div>
+                  <div class="wf-status holding">🔒 J+30 attente</div>
+                </div>
+              </div>
+
+              <!-- Corporate hold progress -->
+              <div class="hold-countdown">
+                <div class="hc-top">
+                  <div class="hc-label">Règlement Stellantis · Net 30</div>
+                  <div class="hc-days">J+<span id="days-remaining">27</span> restants</div>
+                </div>
+                <div class="hc-bar-wrap"><div class="hc-bar" id="hc-bar" style="width:10%;"></div></div>
+                <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;">
+                  <span>Aujourd'hui J+3</span><span>Libération prévue: 06/05/2026</span>
+                </div>
+              </div>
+
+              <!-- Option C: Early Release -->
+              <div class="early-release-panel">
+                <div class="erp-header">
+                  <div class="erp-title">⚡ Option C — Early Release (libérer maintenant)</div>
+                  <div class="erp-badge">−5% FRAIS</div>
+                </div>
+                <div class="erp-calc">
+                  <div class="erp-row">
+                    <span class="erp-lbl">Montant Tranche 3</span>
+                    <span class="erp-val" id="erp-base">MAD 1,698</span>
+                  </div>
+                  <div class="erp-row">
+                    <span class="erp-lbl">Frais Early Release (5%)</span>
+                    <span class="erp-val red" id="erp-fee">−MAD 85</span>
+                  </div>
+                  <div class="erp-row">
+                    <span class="erp-lbl">Jours économisés</span>
+                    <span class="erp-val" style="color:var(--teal);">27 jours</span>
+                  </div>
+                  <div class="erp-row total-row">
+                    <span class="erp-lbl">Vous recevez maintenant</span>
+                    <span class="erp-val teal" id="erp-net">MAD 1,613</span>
+                  </div>
+                </div>
+                <button class="erp-btn" onclick="triggerEarlyRelease()">
+                  ⚡ Libérer maintenant — MAD <span id="erp-btn-amount">1,613</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT HISTORY TABLE -->
+  <div class="history-table">
+    <div class="ht-header">📋 Historique des paiements — Tous les lots</div>
+    <div class="ht-row ht-head">
+      <span>Lot</span><span>Route · Chargeur</span><span>T1 · 50%</span><span>T2 · 25% GPS</span><span>T3 · 25%</span><span>Statut</span>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8780','Fès → Casa · Ingelec · Toutes tranches versées')">
+      <div class="ht-lot">LOT-8780</div>
+      <div><div class="ht-route">Fès → Casablanca</div><div class="ht-sub">Ingelec · Informel</div></div>
+      <div><span class="pill pill-g">✓ 2,620</span></div>
+      <div><span class="pill pill-g">✓ 1,310</span></div>
+      <div><span class="pill pill-g">✓ 1,310</span></div>
+      <div><span class="pill pill-g">✓ Complet</span></div>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8799','Casa → Marrakech · OCP · T3 en attente Net 30')">
+      <div class="ht-lot">LOT-8799</div>
+      <div><div class="ht-route">Casa → Marrakech</div><div class="ht-sub">OCP Group · Corporate</div></div>
+      <div><span class="pill pill-g">✓ 4,850</span></div>
+      <div><span class="pill pill-g">✓ 2,425</span></div>
+      <div><span class="pill pill-p">🔒 J+24</span></div>
+      <div><span class="pill pill-a">⏳ En cours</span></div>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8801','Rabat → Agadir · Cosumar · Early release activé')">
+      <div class="ht-lot">LOT-8801</div>
+      <div><div class="ht-route">Rabat → Agadir</div><div class="ht-sub">Cosumar · Corporate Net 60</div></div>
+      <div><span class="pill pill-g">✓ 5,820</span></div>
+      <div><span class="pill pill-g">✓ 2,910</span></div>
+      <div><span class="pill pill-t">⚡ Early −5%</span></div>
+      <div><span class="pill pill-t">⚡ Early release</span></div>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8815','Fès → Nador · T2 en cours · 43 min restantes')">
+      <div class="ht-lot">LOT-8815</div>
+      <div><div class="ht-route">Fès → Nador</div><div class="ht-sub">Bricoma SARL · Informel</div></div>
+      <div><span class="pill pill-g">✓ 1,940</span></div>
+      <div><span class="pill pill-a">⏳ 43 min</span></div>
+      <div><span class="pill" style="background:rgba(255,255,255,0.06);color:var(--text3);">🔒 Attend T2</span></div>
+      <div><span class="pill pill-a">⏳ En route</span></div>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8821','Béni Mellal → Casa · T1 versé · T2 43min')">
+      <div class="ht-lot">LOT-8821</div>
+      <div><div class="ht-route">Béni Mellal → Casa</div><div class="ht-sub">Bricoma · Informel · En cours</div></div>
+      <div><span class="pill pill-g">✓ 3,395</span></div>
+      <div><span class="pill pill-a">⏳ 43 min</span></div>
+      <div><span class="pill" style="background:rgba(255,255,255,0.06);color:var(--text3);">🔒 J+1</span></div>
+      <div><span class="pill pill-a">⏳ En cours</span></div>
+    </div>
+    <div class="ht-row" onclick="showToast('LOT-8810','Litige ouvert · TriqLog arbitrage en cours')">
+      <div class="ht-lot">LOT-8810</div>
+      <div><div class="ht-route">Agadir → Casa</div><div class="ht-sub">Marchés Al Hoceima · Informel</div></div>
+      <div><span class="pill pill-g">✓ 1,165</span></div>
+      <div><span class="pill pill-g">✓ 583</span></div>
+      <div><span class="pill pill-r">⚠️ Litige</span></div>
+      <div><span class="pill pill-r">⚠️ Arbitrage</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toastEl"><div class="toast-title" id="tTitle"></div><div class="toast-body" id="tBody"></div></div>
+
+<script>
+// ── Toast ──
+function showToast(title, body) {
+  const el = document.getElementById('toastEl');
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tBody').textContent = body;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4200);
+}
+
+// ── Type selector ──
+let currentType = 'a';
+function selectType(t) {
+  currentType = t;
+  const ca = document.getElementById('card-a');
+  const cb = document.getElementById('card-b');
+  const wa = document.getElementById('waterfall-a');
+  const wb = document.getElementById('waterfall-b');
+  const nf = document.getElementById('netTermsField');
+
+  if (t === 'a') {
+    ca.classList.add('sel-a'); cb.classList.remove('sel-b');
+    ca.querySelector('.tc-select-hint').textContent = '✓';
+    cb.querySelector('.tc-select-hint').textContent = '○';
+    wa.style.display = ''; wb.style.display = 'none';
+    nf.style.display = 'none';
+    document.getElementById('typeSelect').value = 'informal';
+    updateSummaryLabels('a');
+  } else {
+    cb.classList.add('sel-b'); ca.classList.remove('sel-a');
+    cb.querySelector('.tc-select-hint').textContent = '✓';
+    ca.querySelector('.tc-select-hint').textContent = '○';
+    wa.style.display = 'none'; wb.style.display = '';
+    nf.style.display = '';
+    document.getElementById('typeSelect').value = 'corporate';
+    updateSummaryLabels('b');
+  }
+  recalc();
+}
+
+function updateSummaryLabels(t) {
+  const t3lbl = document.getElementById('sb-t3-label');
+  const t3sub = document.getElementById('sb-t3-sub');
+  const t2sub = document.getElementById('sb-t2-sub');
+  if (t === 'a') {
+    t3lbl.textContent = '🛡️ Fenêtre 24h (25%)';
+    t3sub.textContent = 'Libéré J+1 si pas de litige';
+    t2sub.textContent = 'Auto-libéré après 60 min';
+  } else {
+    t3lbl.textContent = '🏢 Corporate hold (25%)';
+    t3sub.textContent = 'Net 30/60 ou Early −5%';
+    t2sub.textContent = 'Auto-libéré après 60 min GPS';
+  }
+}
+
+// ── Calculator ──
+function recalc() {
+  const gross = parseFloat(document.getElementById('grossInput').value) || 0;
+  const fee3 = Math.round(gross * 0.03);
+  const net = gross - fee3;
+  const t1 = Math.round(net * 0.5);
+  const t2 = Math.round(net * 0.25);
+  const t3 = net - t1 - t2;
+  const earlyFee = Math.round(t3 * 0.05);
+  const earlyNet = t3 - earlyFee;
+
+  const fmt = n => n.toLocaleString('fr-MA');
+  const isB = currentType === 'b';
+  const netDays = document.getElementById('netSelect')?.value || '30';
+
+  // Calculator results
+  document.getElementById('cr-fee').textContent = '−MAD ' + fmt(fee3);
+  document.getElementById('cr-net').textContent = 'MAD ' + fmt(net);
+  document.getElementById('cr-t1').textContent = 'MAD ' + fmt(t1);
+  document.getElementById('cr-t2').textContent = 'MAD ' + fmt(t2);
+  document.getElementById('cr-t3').textContent = 'MAD ' + fmt(t3);
+  document.getElementById('cr-early').textContent = 'MAD ' + fmt(earlyNet);
+  document.getElementById('cr-early-fee').textContent = '−MAD ' + fmt(earlyFee);
+  const t3when = isB ? 'J+' + netDays : '24 heures';
+  document.getElementById('cr-t3-label').textContent = isB ? 'T3 · Net ' + netDays : 'T3 libérée dans';
+  document.getElementById('cr-t3-when').textContent = t3when;
+
+  // Summary bar
+  document.getElementById('sb-t1').textContent = 'MAD ' + fmt(t1);
+  document.getElementById('sb-t2').textContent = 'MAD ' + fmt(t2);
+  document.getElementById('sb-t3').textContent = 'MAD ' + fmt(t3);
+  document.getElementById('sb-total').textContent = 'MAD ' + fmt(net);
+
+  // Waterfall A
+  document.getElementById('gross-a').textContent = 'MAD ' + fmt(gross);
+  document.getElementById('fee-a').textContent = 'MAD ' + fmt(fee3);
+  document.getElementById('net-a').textContent = 'MAD ' + fmt(net);
+  document.getElementById('wf-a-t1-amt').textContent = 'MAD ' + fmt(t1);
+  document.getElementById('wf-a-t2-amt').textContent = 'MAD ' + fmt(t2);
+  document.getElementById('wf-a-t3-amt').textContent = 'MAD ' + fmt(t3);
+
+  // Waterfall B
+  document.getElementById('gross-b').textContent = 'MAD ' + fmt(gross);
+  document.getElementById('net-b').textContent = 'MAD ' + fmt(net);
+  document.getElementById('wf-b-t1-amt').textContent = 'MAD ' + fmt(t1);
+  document.getElementById('wf-b-t2-amt').textContent = 'MAD ' + fmt(t2);
+  document.getElementById('wf-b-t3-amt').textContent = 'MAD ' + fmt(t3);
+  document.getElementById('wf-b-t3-status').textContent = isB ? '🔒 J+' + netDays + ' attente' : '🔒 J+1';
+
+  // Early release
+  document.getElementById('erp-base').textContent = 'MAD ' + fmt(t3);
+  document.getElementById('erp-fee').textContent = '−MAD ' + fmt(earlyFee);
+  document.getElementById('erp-net').textContent = 'MAD ' + fmt(earlyNet);
+  document.getElementById('erp-btn-amount').textContent = fmt(earlyNet);
+
+  // Corporate hold bar timing
+  if (isB) {
+    const daysTotal = parseInt(netDays);
+    const daysGone = 3;
+    const pct = Math.round((daysGone / daysTotal) * 100);
+    document.getElementById('hc-bar').style.width = pct + '%';
+    document.getElementById('days-remaining').textContent = daysTotal - daysGone;
+  }
+}
+
+// ── Countdown timers ──
+let secs = 43 * 60 + 17; // 43:17 remaining out of 60 min
+const totalSecs = 60 * 60;
+
+function updateCountdowns() {
+  if (secs <= 0) {
+    // Release T2
+    document.getElementById('cd-a-timer').textContent = '00:00:00';
+    document.getElementById('cd-b-timer').textContent = '00:00:00';
+    document.getElementById('cd-a-bar').style.width = '100%';
+    document.getElementById('cd-b-bar').style.width = '100%';
+    document.getElementById('wf-a-t2').className = 'wf-step released';
+    document.getElementById('wf-a-t2-status').className = 'wf-status paid';
+    document.getElementById('wf-a-t2-status').textContent = '✓ Libéré';
+    document.getElementById('wf-a-t2').querySelector('.wf-circle').textContent = '✓';
+    showToast('✅ T2 libérée !', 'MAD 1,698 versés automatiquement à Hassan Benali');
+    return;
+  }
+
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  const str = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  document.getElementById('cd-a-timer').textContent = str;
+  document.getElementById('cd-b-timer').textContent = str;
+
+  // Bar: progress = time elapsed / total
+  const elapsed = totalSecs - secs;
+  const pct = Math.round((elapsed / totalSecs) * 100);
+  document.getElementById('cd-a-bar').style.width = pct + '%';
+  document.getElementById('cd-b-bar').style.width = pct + '%';
+
+  secs--;
+}
+setInterval(updateCountdowns, 1000);
+
+// ── Early release ──
+function triggerEarlyRelease() {
+  const gross = parseFloat(document.getElementById('grossInput').value) || 7000;
+  const net = gross - Math.round(gross * 0.03);
+  const t3 = net - Math.round(net * 0.5) - Math.round(net * 0.25);
+  const earlyNet = t3 - Math.round(t3 * 0.05);
+  const earlyFee = Math.round(t3 * 0.05);
+
+  document.getElementById('wf-b-t3').className = 'wf-step early-step';
+  document.getElementById('wf-b-t3').querySelector('.wf-circle').textContent = '⚡';
+  document.getElementById('wf-b-t3-amt').className = 'wf-amount teal';
+  document.getElementById('wf-b-t3-amt').textContent = 'MAD ' + earlyNet.toLocaleString();
+  document.getElementById('wf-b-t3-status').className = 'wf-status available';
+  document.getElementById('wf-b-t3-status').textContent = '⚡ Libéré maintenant';
+
+  showToast(
+    '⚡ Early Release activé !',
+    'MAD ' + earlyNet.toLocaleString() + ' versés maintenant. Frais ' + earlyFee.toLocaleString() + ' MAD (5%). Stellantis règle à J+30.'
+  );
+
+  // Update summary
+  document.getElementById('sb-t3').textContent = 'MAD ' + earlyNet.toLocaleString();
+  document.getElementById('sb-t3').style.color = 'var(--teal)';
+}
+
+// ── wf-b-t3-status element reference helper ──
+// Add an ID to the status element in B waterfall
+document.addEventListener('DOMContentLoaded', () => {
+  const wfBt3 = document.getElementById('wf-b-t3');
+  if (wfBt3) {
+    const statusEl = wfBt3.querySelector('.wf-status');
+    if (statusEl) statusEl.id = 'wf-b-t3-status';
+  }
+});
+
+// Init
+recalc();
+</script>
+</body>
+</html>

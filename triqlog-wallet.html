@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>TriqLog — Wallet Integration</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090D;--bg2:#0C0E15;--bg3:#11131C;
+  --surface:#171A26;--surface2:#1C2030;--surface3:#222840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --amber:#F0B429;--amber2:#FFD166;--amber-dim:rgba(240,180,41,0.12);--amber-glow:rgba(240,180,41,0.05);
+  --green:#22C55E;--green2:#4ADE80;--green-dim:rgba(34,197,94,0.11);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.10);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,0.09);
+  --teal:#2DD4BF;--teal-dim:rgba(45,212,191,0.10);
+  --purple:#C084FC;--purple-dim:rgba(192,132,252,0.09);
+  --fuel:#FB923C;--fuel-dim:rgba(251,146,60,0.10);
+  --text:#EEF0FA;--text2:#8891AE;--text3:#454C6A;
+  --r:16px;--r-sm:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100vh;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 15% 20%,rgba(240,180,41,0.04) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 85% 80%,rgba(34,197,94,0.03) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 60px;}
+
+/* ── HEADER ── */
+.hdr{text-align:center;padding:40px 0 32px;border-bottom:1px solid var(--border);margin-bottom:32px;}
+.hdr-logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:14px;}
+.hdr-icon{width:50px;height:50px;background:linear-gradient(135deg,var(--amber),#B07010);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 6px 20px rgba(240,180,41,0.3);}
+.hdr-name{font-size:24px;font-weight:900;letter-spacing:-.5px;}
+.hdr-name span{color:var(--amber);}
+.hdr-ar{font-family:'Noto Sans Arabic',sans-serif;font-size:12px;color:var(--text3);display:block;margin-top:2px;}
+.hdr-sub{font-size:13px;color:var(--text2);max-width:560px;margin:0 auto 18px;line-height:1.6;}
+.pills{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;}
+.pill{background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:4px 13px;font-size:10px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace;}
+.pill.g{background:var(--green-dim);border-color:rgba(34,197,94,.25);color:var(--green);}
+.pill.a{background:var(--amber-dim);border-color:rgba(240,180,41,.3);color:var(--amber);}
+.pill.f{background:var(--fuel-dim);border-color:rgba(251,146,60,.3);color:var(--fuel);}
+.pill.t{background:var(--teal-dim);border-color:rgba(45,212,191,.25);color:var(--teal);}
+
+/* ── CALCULATOR ── */
+.calc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px;}
+.calc-header{padding:16px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.calc-title{font-size:14px;font-weight:800;}
+.calc-mode-toggle{display:flex;gap:6px;}
+.mode-btn{padding:6px 14px;border-radius:8px;border:1.5px solid var(--border2);background:none;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.mode-btn.active.standard{border-color:var(--blue);background:var(--blue-dim);color:var(--blue);}
+.mode-btn.active.express{border-color:var(--amber);background:var(--amber-dim);color:var(--amber);}
+.mode-btn:not(.active){color:var(--text3);}
+
+.calc-body{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+@media(max-width:600px){.calc-body{grid-template-columns:1fr;}}
+.calc-input-side{padding:20px;border-right:1px solid var(--border);}
+.calc-result-side{padding:20px;}
+.calc-field{margin-bottom:14px;}
+.calc-lbl{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;}
+.calc-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:var(--text);outline:none;transition:border-color .2s;}
+.calc-input:focus{border-color:var(--amber);}
+select.calc-input{cursor:pointer;}
+
+/* Split visualization */
+.split-bars{display:flex;flex-direction:column;gap:10px;}
+.split-row{display:flex;align-items:center;gap:12px;}
+.sr-label{font-size:11px;font-weight:700;color:var(--text2);width:100px;flex-shrink:0;}
+.sr-bar-wrap{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+.sr-bar{height:100%;border-radius:4px;transition:width .5s ease;}
+.sr-amount{font-size:13px;font-weight:900;font-family:'IBM Plex Mono',monospace;width:90px;text-align:right;flex-shrink:0;}
+.sr-pct{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;width:36px;text-align:right;flex-shrink:0;}
+
+.split-total{margin-top:14px;padding:12px 14px;background:var(--green-dim);border:1px solid rgba(34,197,94,.2);border-radius:var(--r-sm);display:flex;justify-content:space-between;align-items:center;}
+.st-label{font-size:12px;font-weight:700;color:var(--green);}
+.st-amount{font-size:20px;font-weight:900;color:var(--green);font-family:'IBM Plex Mono',monospace;}
+
+/* ── EVENT FLOW ── */
+.flow-section{margin-bottom:24px;}
+.flow-title{font-size:11px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'IBM Plex Mono',monospace;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.flow-dot{width:6px;height:6px;border-radius:50%;}
+
+.flow-track{display:flex;flex-direction:column;gap:0;}
+.flow-step{display:flex;gap:14px;padding-bottom:0;position:relative;}
+.flow-step:not(:last-child) .fs-line{position:absolute;left:17px;top:36px;width:2px;background:var(--border);z-index:0;}
+.flow-step.done .fs-line{background:var(--green);}
+.flow-step.active-step .fs-line{background:linear-gradient(180deg,var(--amber),var(--border));}
+
+.fs-circle{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;z-index:1;border:2px solid var(--border2);background:var(--surface2);transition:all .4s;}
+.flow-step.done .fs-circle{background:var(--green);border-color:var(--green);font-size:13px;}
+.flow-step.active-step .fs-circle{background:var(--amber);border-color:var(--amber);color:#0A0700;box-shadow:0 0 14px rgba(240,180,41,.4);animation:fsPulse 1.8s ease-in-out infinite;}
+@keyframes fsPulse{0%,100%{box-shadow:0 0 14px rgba(240,180,41,.3);}50%{box-shadow:0 0 22px rgba(240,180,41,.7),0 0 0 5px rgba(240,180,41,.1);}}
+
+.fs-content{flex:1;padding-bottom:18px;}
+.fs-inner{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 15px;transition:border-color .3s;}
+.flow-step.done .fs-inner{border-color:rgba(34,197,94,.2);background:rgba(34,197,94,.03);}
+.flow-step.active-step .fs-inner{border-color:rgba(240,180,41,.22);background:rgba(240,180,41,.03);}
+.fs-title{font-size:13px;font-weight:800;margin-bottom:3px;}
+.fs-desc{font-size:11px;color:var(--text2);line-height:1.5;}
+.fs-time{font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:5px;}
+.flow-step.done .fs-time{color:var(--green);}
+.flow-step.active-step .fs-time{color:var(--amber);}
+.flow-step:not(.done):not(.active-step) .fs-time{color:var(--text3);}
+
+/* Transfer cards */
+.transfers-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+.transfer-card{
+  flex:1;min-width:130px;border-radius:10px;padding:12px;
+  display:flex;flex-direction:column;gap:4px;
+  transition:all .4s;
+  border:1px solid var(--border);background:var(--surface3);
+}
+.transfer-card.sent{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04);}
+.transfer-card.sending{border-color:rgba(240,180,41,.25);background:rgba(240,180,41,.04);animation:tcPulse 1.2s ease-in-out infinite;}
+@keyframes tcPulse{0%,100%{opacity:1;}50%{opacity:.7;}}
+.tc-provider{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;font-family:'IBM Plex Mono',monospace;margin-bottom:4px;}
+.tc-amount{font-size:18px;font-weight:900;font-family:'IBM Plex Mono',monospace;}
+.tc-label{font-size:10px;color:var(--text3);}
+.tc-status{font-size:10px;font-weight:700;margin-top:4px;font-family:'IBM Plex Mono',monospace;}
+.tc-ref{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:2px;word-break:break-all;}
+
+/* ── PROVIDER CARDS ── */
+.providers-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}
+@media(max-width:700px){.providers-grid{grid-template-columns:1fr 1fr;}}
+.provider-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s;text-align:center;}
+.provider-card:hover{border-color:var(--border2);background:var(--surface2);}
+.provider-card.selected{border-color:var(--amber);background:var(--amber-glow);}
+.pc-icon{font-size:28px;margin-bottom:8px;}
+.pc-name{font-size:13px;font-weight:800;margin-bottom:4px;}
+.pc-desc{font-size:11px;color:var(--text3);line-height:1.4;}
+.pc-coverage{font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:6px;}
+.pc-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);margin:8px auto 0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;transition:all .2s;}
+.provider-card.selected .pc-check{background:var(--amber);border-color:var(--amber);color:#0A0600;}
+
+/* ── DEMO CONTROLS ── */
+.demo-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:24px;}
+.demo-header{padding:14px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.demo-title{font-size:14px;font-weight:800;}
+.demo-status{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--text3);}
+.demo-controls{display:flex;gap:10px;padding:16px 20px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.ctrl{padding:10px 18px;border-radius:10px;border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;}
+.ctrl:active{transform:scale(.97);}
+.ctrl.amber{background:var(--amber);color:#0A0600;}
+.ctrl.green{background:var(--green);color:#021008;}
+.ctrl.teal{background:var(--teal);color:#021410;}
+.ctrl.outline{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.ctrl.outline:hover{border-color:var(--amber);color:var(--amber);}
+
+/* TX Log */
+.tx-log{max-height:280px;overflow-y:auto;}
+.tx-row{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--border);font-size:12px;}
+.tx-row:last-child{border-bottom:none;}
+.tx-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.tx-icon.fuel{background:var(--fuel-dim);}
+.tx-icon.cash{background:var(--green-dim);}
+.tx-icon.escrow{background:var(--purple-dim);}
+.tx-icon.fee{background:var(--red-dim);}
+.tx-body{flex:1;}
+.tx-name{font-weight:700;}
+.tx-ref{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.tx-amount{font-weight:800;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+.tx-amount.green{color:var(--green);}
+.tx-amount.fuel{color:var(--fuel);}
+.tx-amount.red{color:var(--red);}
+.tx-amount.purple{color:var(--purple);}
+.tx-status{font-size:9px;font-weight:800;padding:2px 8px;border-radius:100px;font-family:'IBM Plex Mono',monospace;flex-shrink:0;}
+.txs-ok{background:var(--green-dim);color:var(--green);}
+.txs-pend{background:var(--amber-dim);color:var(--amber);}
+.txs-hold{background:var(--purple-dim);color:var(--purple);}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--amber);border-radius:12px;padding:13px 17px;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:999;transform:translateX(120%);opacity:0;transition:all .35s;max-width:300px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast.g{border-left-color:var(--green);}
+.toast.t{border-left-color:var(--teal);}
+.toast-title{font-weight:800;font-size:13px;color:var(--amber);margin-bottom:2px;}
+.toast.g .toast-title{color:var(--green);}
+.toast.t .toast-title{color:var(--teal);}
+.toast-body{font-size:12px;color:var(--text2);}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon">💳</div>
+    <div>
+      <div class="hdr-name">Shahi<span>Log</span> — Wallet</div>
+      <div class="hdr-ar">طريق لوج · محفظة السائق</div>
+    </div>
+  </div>
+  <div class="hdr-sub">
+    QR_SCAN_SUCCESS → Split automatique · 30% Fuel Card (Afriquia) · 20% Cash Out (CashPlus / Wafacash / Jibi)
+    · Frais 3% Standard ou 6% Express · T2/T3 en escrow avec timers
+  </div>
+  <div class="pills">
+    <div class="pill a">QR_SCAN_SUCCESS listener</div>
+    <div class="pill f">30% Fuel Card Afriquia</div>
+    <div class="pill g">20% Cash Out</div>
+    <div class="pill">3% Standard / 6% Express</div>
+    <div class="pill t">Idempotency keys</div>
+    <div class="pill">CashPlus · Wafacash · Jibi</div>
+  </div>
+</div>
+
+<!-- SPLIT CALCULATOR -->
+<div class="calc-card">
+  <div class="calc-header">
+    <div class="calc-title">🧮 Simulateur de split wallet</div>
+    <div class="calc-mode-toggle">
+      <button class="mode-btn active standard" id="btnStandard" onclick="setMode('STANDARD',this)">
+        📅 Standard 3%
+      </button>
+      <button class="mode-btn express" id="btnExpress" onclick="setMode('EXPRESS',this)">
+        ⚡ Express 6%
+      </button>
+    </div>
+  </div>
+  <div class="calc-body">
+    <div class="calc-input-side">
+      <div class="calc-field">
+        <div class="calc-lbl">Montant brut du lot (MAD)</div>
+        <input class="calc-input" type="number" id="grossInput" value="7000" oninput="recalc()">
+      </div>
+      <div class="calc-field">
+        <div class="calc-lbl">Provider Cash Out</div>
+        <select class="calc-input" id="providerSelect" onchange="recalc()">
+          <option value="CASHPLUS">CashPlus</option>
+          <option value="WAFACASH">Wafacash</option>
+          <option value="JIBI">Jibi</option>
+        </select>
+      </div>
+      <div class="calc-field">
+        <div class="calc-lbl">Délai de règlement chargeur</div>
+        <select class="calc-input" id="termsSelect" onchange="recalc()">
+          <option value="0">Informel (24h)</option>
+          <option value="30">Net 30 jours</option>
+          <option value="60">Net 60 jours</option>
+        </select>
+      </div>
+      <!-- Mode info box -->
+      <div id="modeInfoBox" style="background:var(--blue-dim);border:1px solid rgba(96,165,250,.2);border-radius:var(--r-sm);padding:11px 13px;font-size:12px;color:var(--text2);line-height:1.55;">
+        <strong style="color:var(--blue);">📅 Standard 3% :</strong> T3 retenu jusqu'au virement bancaire du chargeur. Chauffeur attend mais paie moins.
+      </div>
+    </div>
+    <div class="calc-result-side">
+      <div class="calc-lbl" style="margin-bottom:14px;">Répartition en temps réel</div>
+      <div class="split-bars" id="splitBars">
+        <!-- injected by JS -->
+      </div>
+      <div class="split-total">
+        <div class="st-label">Net total chauffeur</div>
+        <div class="st-amount" id="stTotal">MAD 6,790</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROVIDER SELECTOR -->
+<div class="flow-title" style="margin-bottom:14px;"><div class="flow-dot" style="background:var(--amber)"></div>Providers M-Wallet disponibles</div>
+<div class="providers-grid">
+  <div class="provider-card selected" id="pc-CASHPLUS" onclick="selectProvider('CASHPLUS',this)">
+    <div class="pc-icon">💵</div>
+    <div class="pc-name">CashPlus</div>
+    <div class="pc-desc">Réseau national · Agent cash ou wallet</div>
+    <div class="pc-coverage" style="color:var(--green);">12,000+ agents</div>
+    <div class="pc-check">✓</div>
+  </div>
+  <div class="provider-card" id="pc-WAFACASH" onclick="selectProvider('WAFACASH',this)">
+    <div class="pc-icon">🏦</div>
+    <div class="pc-name">Wafacash</div>
+    <div class="pc-desc">Attijariwafa · Bank-grade · Corporate</div>
+    <div class="pc-coverage" style="color:var(--blue);">OAuth2 · Net 30/60</div>
+    <div class="pc-check"></div>
+  </div>
+  <div class="provider-card" id="pc-JIBI" onclick="selectProvider('JIBI',this)">
+    <div class="pc-icon">📱</div>
+    <div class="pc-name">Jibi</div>
+    <div class="pc-desc">Maroc Telecom · Digital wallet</div>
+    <div class="pc-coverage" style="color:var(--purple);">Casa · Rabat · jeunes</div>
+    <div class="pc-check"></div>
+  </div>
+  <div class="provider-card" id="pc-FUEL_CARD" style="cursor:default;opacity:.8;">
+    <div class="pc-icon">⛽</div>
+    <div class="pc-name">Afriquia Card</div>
+    <div class="pc-desc">Carburant uniquement · Toujours actif</div>
+    <div class="pc-coverage" style="color:var(--fuel);">T1 Fuel bucket auto</div>
+    <div class="pc-check" style="background:var(--fuel);border-color:var(--fuel);color:#0A0600;">✓</div>
+  </div>
+</div>
+
+<!-- EVENT FLOW DEMO -->
+<div class="demo-section">
+  <div class="demo-header">
+    <div class="demo-title">🔄 QR_SCAN_SUCCESS → Wallet Split — Simulation</div>
+    <div class="demo-status" id="demoStatus">En attente</div>
+  </div>
+  <div class="demo-controls">
+    <button class="ctrl amber" id="btnOriginScan" onclick="runOriginScan()">📍 Simuler scan ORIGIN (T1)</button>
+    <button class="ctrl green" id="btnDestScan"   onclick="runDestScan()" disabled>🏁 Simuler scan DEST (T2)</button>
+    <button class="ctrl teal"  id="btnT3Release"  onclick="runT3Release()" disabled>⚡ Libérer T3</button>
+    <button class="ctrl outline" onclick="resetDemo()">↺ Reset</button>
+  </div>
+
+  <!-- Flow steps -->
+  <div style="padding:16px 20px 4px;" id="flowSteps">
+
+    <div class="flow-track">
+      <!-- Step 0: QR Geofence -->
+      <div class="flow-step" id="fs0">
+        <div class="fs-line" style="height:90px;"></div>
+        <div class="fs-circle">📍</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">checkQRPermission() — Geofence validé</div>
+            <div class="fs-desc">GPS confirme position dans hub logistique (≤1km). Signature HMAC-SHA256 vérifiée. Événement QR_SCAN_SUCCESS publié sur Redis channel.</div>
+            <div class="fs-time" id="ft0">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: Split calc -->
+      <div class="flow-step" id="fs1">
+        <div class="fs-line" style="height:90px;"></div>
+        <div class="fs-circle">🧮</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">calculateWalletSplit() — <span id="feeLabel">3% Standard</span></div>
+            <div class="fs-desc" id="splitDesc">Calcul du split…</div>
+            <div class="fs-time" id="ft1">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Fuel card -->
+      <div class="flow-step" id="fs2">
+        <div class="fs-line" style="height:110px;"></div>
+        <div class="fs-circle">⛽</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">T1 Fuel → Afriquia Card</div>
+            <div class="fs-desc">30% du T1 rechargé sur la carte carburant Afriquia. Restriction : fuel_only.</div>
+            <div class="transfers-row" id="fuelTransfer">
+              <div class="transfer-card" id="tc-fuel">
+                <div class="tc-provider" style="color:var(--fuel);">⛽ AFRIQUIA CARD</div>
+                <div class="tc-amount" style="color:var(--fuel);" id="tc-fuel-amt">MAD 0</div>
+                <div class="tc-label">T1 · 30% · Fuel only</div>
+                <div class="tc-status" style="color:var(--text3);" id="tc-fuel-status">En attente</div>
+                <div class="tc-ref" id="tc-fuel-ref">—</div>
+              </div>
+            </div>
+            <div class="fs-time" id="ft2">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Cash out -->
+      <div class="flow-step" id="fs3">
+        <div class="fs-line" style="height:110px;"></div>
+        <div class="fs-circle">💵</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">T1 Cash → <span id="cashProviderLabel">CashPlus</span></div>
+            <div class="fs-desc">20% du T1 transféré vers le wallet cash du chauffeur. Idempotency key garantit zéro double-paiement.</div>
+            <div class="transfers-row" id="cashTransfer">
+              <div class="transfer-card" id="tc-cash">
+                <div class="tc-provider" style="color:var(--green);" id="tc-cash-provider">💵 CASHPLUS</div>
+                <div class="tc-amount" style="color:var(--green);" id="tc-cash-amt">MAD 0</div>
+                <div class="tc-label">T1 · 20% · Cash out</div>
+                <div class="tc-status" style="color:var(--text3);" id="tc-cash-status">En attente</div>
+                <div class="tc-ref" id="tc-cash-ref">—</div>
+              </div>
+            </div>
+            <div class="fs-time" id="ft3">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Escrow T2+T3 -->
+      <div class="flow-step" id="fs4">
+        <div class="fs-line" style="height:90px;"></div>
+        <div class="fs-circle">🔒</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">T2 + T3 → Escrow TriqLog</div>
+            <div class="fs-desc" id="escrowDesc">T2 + T3 retenus en escrow. T2 libéré après 60 min GPS. T3 libéré après 24h (ou Net30/60).</div>
+            <div class="transfers-row">
+              <div class="transfer-card" id="tc-t2">
+                <div class="tc-provider" style="color:var(--amber);">⏱ T2 · 60 MIN</div>
+                <div class="tc-amount" style="color:var(--amber);" id="tc-t2-amt">MAD 0</div>
+                <div class="tc-label">25% · Escrow</div>
+                <div class="tc-status" style="color:var(--text3);" id="tc-t2-status">En attente</div>
+              </div>
+              <div class="transfer-card" id="tc-t3">
+                <div class="tc-provider" style="color:var(--purple);" id="tc-t3-label">🔒 T3 · 24H</div>
+                <div class="tc-amount" style="color:var(--purple);" id="tc-t3-amt">MAD 0</div>
+                <div class="tc-label">25% · Escrow</div>
+                <div class="tc-status" style="color:var(--text3);" id="tc-t3-status">En attente</div>
+              </div>
+            </div>
+            <div class="fs-time" id="ft4">En attente…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Platform fee -->
+      <div class="flow-step" id="fs5">
+        <div class="fs-circle">💼</div>
+        <div class="fs-content">
+          <div class="fs-inner">
+            <div class="fs-title">Platform Revenue → TriqLog</div>
+            <div class="fs-desc">Frais plateforme enregistrés dans platform_revenue. E-invoice DGI générée après T3.</div>
+            <div class="fs-time" id="ft5">En attente…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- flowSteps -->
+
+  <!-- TX Log -->
+  <div style="padding:10px 20px 6px;font-size:11px;font-weight:800;color:var(--text3);font-family:'IBM Plex Mono',monospace;border-top:1px solid var(--border);">WALLET_TRANSACTIONS LOG</div>
+  <div class="tx-log" id="txLog">
+    <div style="padding:14px 20px;font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;">En attente du premier événement QR_SCAN_SUCCESS…</div>
+  </div>
+</div>
+
+</div><!-- wrap -->
+
+<div class="toast" id="toastEl"><div class="toast-title" id="tTitle"></div><div class="toast-body" id="tBody"></div></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let payoutMode = 'STANDARD';
+let selectedProvider = 'CASHPLUS';
+let demoPhase = 'idle';
+let splitData = null;
+
+const PROVIDER_LABELS = { CASHPLUS:'CashPlus', WAFACASH:'Wafacash', JIBI:'Jibi', FUEL_CARD:'Afriquia' };
+const PROVIDER_ICONS  = { CASHPLUS:'💵', WAFACASH:'🏦', JIBI:'📱', FUEL_CARD:'⛽' };
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmt(n){ return Number(n).toLocaleString('fr-MA',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function uuid(){ return 'xxxxxxxx'.replace(/x/g,()=>(Math.random()*16|0).toString(16)); }
+function now(){ return new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+let toastTmr=null;
+function toast(title,body,type=''){
+  const e=document.getElementById('toastEl');
+  document.getElementById('tTitle').textContent=title;
+  document.getElementById('tBody').textContent=body;
+  e.className='toast show'+(type==='g'?' g':type==='t'?' t':'');
+  if(toastTmr)clearTimeout(toastTmr); toastTmr=setTimeout(()=>e.classList.remove('show'),4500);
+}
+function el(id){ return document.getElementById(id); }
+
+// ── Split calculation ──────────────────────────────────────────────────────
+function calcSplit(gross, mode){
+  const feeRate  = mode==='EXPRESS' ? 0.06 : 0.03;
+  const feeAmt   = Math.round(gross * feeRate * 100)/100;
+  const net      = Math.round((gross - feeAmt)*100)/100;
+  const t1Total  = Math.round(net*0.50*100)/100;
+  const t2       = Math.round(net*0.25*100)/100;
+  const t3       = Math.round((net - t1Total - t2)*100)/100;
+  const t1Fuel   = Math.round(t1Total * 0.60 * 100)/100; // 30% of t1 = 60% of t1 split
+  const t1Cash   = Math.round((t1Total - t1Fuel)*100)/100;
+  // 30/20 means fuel=30% of NET and cash=20% of NET
+  // t1Total = 50% of net, so fuel=30% net = 60% of t1, cash=20% net = 40% of t1
+  const fuelAmt  = Math.round(net*0.30*100)/100;
+  const cashAmt  = Math.round((t1Total - fuelAmt)*100)/100;
+  const terms    = parseInt(el('termsSelect').value)||0;
+  const t3Hold   = mode==='EXPRESS' ? 'IMMEDIATE' : terms===60?'NET60':terms===30?'NET30':'24H';
+  return { gross, feeRate:feeRate*100, feeAmt, net, t1Total, fuelAmt, cashAmt, t2, t3, t3Hold };
+}
+
+function recalc(){
+  const gross = parseFloat(el('grossInput').value)||0;
+  splitData   = calcSplit(gross, payoutMode);
+  const s     = splitData;
+  const terms = el('termsSelect').value;
+
+  // Split bars
+  const bars = [
+    { label:'⛽ T1 Fuel Card', amt:s.fuelAmt, pct:30,  color:'var(--fuel)',    bar:'var(--fuel)' },
+    { label:'💵 T1 Cash Out',  amt:s.cashAmt, pct:20,  color:'var(--green)',   bar:'var(--green)' },
+    { label:'⏱ T2 Escrow',    amt:s.t2,      pct:25,  color:'var(--amber)',   bar:'var(--amber)' },
+    { label:'🔒 T3 Escrow',    amt:s.t3,      pct:25,  color:'var(--purple)',  bar:'var(--purple)' },
+    { label:'💼 Frais plateforme', amt:s.feeAmt, pct:s.feeRate, color:'var(--red)', bar:'var(--red)' },
+  ];
+
+  el('splitBars').innerHTML = bars.map(b=>`
+    <div class="split-row">
+      <div class="sr-label" style="font-size:10px;">${b.label}</div>
+      <div class="sr-bar-wrap"><div class="sr-bar" style="width:${Math.min(b.pct/30*100,100)}%;background:${b.bar};"></div></div>
+      <div class="sr-amount" style="color:${b.color};">MAD ${fmt(b.amt)}</div>
+      <div class="sr-pct">${b.pct}%</div>
+    </div>
+  `).join('');
+
+  el('stTotal').textContent = 'MAD ' + fmt(s.net);
+
+  // Update transfer card amounts
+  el('tc-fuel-amt').textContent = 'MAD ' + fmt(s.fuelAmt);
+  el('tc-cash-amt').textContent = 'MAD ' + fmt(s.cashAmt);
+  el('tc-t2-amt').textContent   = 'MAD ' + fmt(s.t2);
+  el('tc-t3-amt').textContent   = 'MAD ' + fmt(s.t3);
+
+  // T3 label
+  const t3labels = { IMMEDIATE:'⚡ T3 · EXPRESS', NET30:'🏢 T3 · NET 30', NET60:'🏢 T3 · NET 60', '24H':'⏳ T3 · 24H' };
+  el('tc-t3-label').textContent = t3labels[s.t3Hold] || '🔒 T3';
+  el('feeLabel').textContent    = s.feeRate + '% ' + (payoutMode==='EXPRESS'?'Express':'Standard');
+  el('escrowDesc').textContent  = `T2 libéré après 60 min GPS · T3 ${s.t3Hold==='IMMEDIATE'?'libéré immédiatement (Express — TriqLog float)':s.t3Hold==='NET30'?'libéré à règlement chargeur Net 30':s.t3Hold==='NET60'?'libéré à règlement chargeur Net 60':'libéré automatiquement après 24h (anti-fraude)'}`;
+
+  // Update provider label in step
+  el('cashProviderLabel').textContent = PROVIDER_LABELS[selectedProvider]||'CashPlus';
+  el('tc-cash-provider').textContent  = PROVIDER_ICONS[selectedProvider]+' '+selectedProvider;
+}
+
+// ── Mode toggle ────────────────────────────────────────────────────────────
+function setMode(mode, btn){
+  payoutMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b=>{
+    b.classList.remove('active','standard','express');
+  });
+  btn.classList.add('active', mode.toLowerCase());
+  // Update info box
+  const infoBox = el('modeInfoBox');
+  if(mode==='EXPRESS'){
+    infoBox.style.background='var(--amber-glow)';
+    infoBox.style.borderColor='rgba(240,180,41,.2)';
+    infoBox.innerHTML='<strong style="color:var(--amber);">⚡ Express 6% :</strong> TriqLog avance T3 immédiatement. Chauffeur reçoit tout maintenant. Frais plus élevés absorbent le risque.';
+  } else {
+    infoBox.style.background='var(--blue-dim)';
+    infoBox.style.borderColor='rgba(96,165,250,.2)';
+    infoBox.innerHTML='<strong style="color:var(--blue);">📅 Standard 3% :</strong> T3 retenu jusqu\'au virement bancaire du chargeur. Chauffeur attend mais paie moins.';
+  }
+  recalc();
+}
+
+// ── Provider selection ─────────────────────────────────────────────────────
+function selectProvider(id, card){
+  selectedProvider = id;
+  document.querySelectorAll('.provider-card').forEach(c=>{
+    c.classList.remove('selected');
+    c.querySelector('.pc-check').textContent='';
+  });
+  if(card){ card.classList.add('selected'); card.querySelector('.pc-check').textContent='✓'; }
+  el('providerSelect').value = id;
+  recalc();
+}
+
+// ── Demo flow ──────────────────────────────────────────────────────────────
+function markStep(id, state){
+  const step = el(id);
+  if(!step) return;
+  step.classList.remove('done','active-step');
+  step.classList.add(state);
+}
+function setTime(id, txt){ const e=el(id); if(e) e.textContent=txt; }
+
+function addTxLog(icon, iconClass, name, ref, amount, amtClass, statusLabel, statusClass){
+  const log = el('txLog');
+  const firstChild = log.firstChild;
+  if(firstChild && firstChild.textContent && firstChild.textContent.includes('En attente')){
+    log.innerHTML='';
+  }
+  const row = document.createElement('div');
+  row.className='tx-row';
+  row.innerHTML=`
+    <div class="tx-icon ${iconClass}">${icon}</div>
+    <div class="tx-body"><div class="tx-name">${name}</div><div class="tx-ref">${ref}</div></div>
+    <div class="tx-amount ${amtClass}">MAD ${fmt(amount)}</div>
+    <div class="tx-status ${statusClass}">${statusLabel}</div>`;
+  log.insertBefore(row, log.firstChild);
+}
+
+async function runOriginScan(){
+  if(demoPhase!=='idle') return;
+  demoPhase='t1';
+  el('btnOriginScan').disabled=true;
+  const s = calcSplit(parseFloat(el('grossInput').value)||7000, payoutMode);
+  splitData = s;
+
+  el('demoStatus').textContent='Processing T1…';
+  el('demoStatus').style.color='var(--amber)';
+
+  // Step 0: geofence
+  markStep('fs0','active-step');
+  await delay(600);
+  setTime('ft0','✓ '+now()+' · Hub: Tanger Med · 280m · HMAC valide');
+  markStep('fs0','done');
+
+  // Step 1: calc
+  markStep('fs1','active-step');
+  await delay(400);
+  el('splitDesc').textContent=`Brut MAD ${fmt(s.gross)} · Frais ${s.feeRate}%: −MAD ${fmt(s.feeAmt)} · Net: MAD ${fmt(s.net)} · T1: MAD ${fmt(s.t1Total)} (Fuel: MAD ${fmt(s.fuelAmt)} + Cash: MAD ${fmt(s.cashAmt)})`;
+  setTime('ft1','✓ '+now()+' · splitData calculé');
+  markStep('fs1','done');
+
+  // Step 2: fuel card
+  markStep('fs2','active-step');
+  el('tc-fuel').classList.add('sending');
+  await delay(800);
+  const fuelRef = 'CPF-'+uuid().slice(0,8).toUpperCase();
+  el('tc-fuel').classList.remove('sending'); el('tc-fuel').classList.add('sent');
+  el('tc-fuel-status').textContent='✓ SUCCESS'; el('tc-fuel-status').style.color='var(--fuel)';
+  el('tc-fuel-ref').textContent=fuelRef;
+  setTime('ft2','✓ '+now()+' · Afriquia Card topup · '+fuelRef);
+  markStep('fs2','done');
+  addTxLog('⛽','fuel','T1 Fuel — Afriquia Card',fuelRef,s.fuelAmt,'fuel','SUCCESS','txs-ok');
+  toast('⛽ Fuel Card rechargée','MAD '+fmt(s.fuelAmt)+' → Afriquia · '+fuelRef,'t');
+
+  // Step 3: cash out
+  markStep('fs3','active-step');
+  el('tc-cash').classList.add('sending');
+  await delay(900);
+  const cashRef = (selectedProvider==='WAFACASH'?'WAF':'selectedProvider'==='JIBI'?'JIB':'CSH')+'-'+uuid().slice(0,8).toUpperCase();
+  el('tc-cash').classList.remove('sending'); el('tc-cash').classList.add('sent');
+  el('tc-cash-status').textContent='✓ SUCCESS'; el('tc-cash-status').style.color='var(--green)';
+  el('tc-cash-ref').textContent=cashRef;
+  setTime('ft3','✓ '+now()+' · '+PROVIDER_LABELS[selectedProvider]+' transfer · '+cashRef);
+  markStep('fs3','done');
+  addTxLog('💵','cash','T1 Cash — '+PROVIDER_LABELS[selectedProvider],cashRef,s.cashAmt,'green','SUCCESS','txs-ok');
+  toast('💰 Cash out envoyé','MAD '+fmt(s.cashAmt)+' → '+PROVIDER_LABELS[selectedProvider],'g');
+
+  // Step 4: escrow
+  markStep('fs4','active-step');
+  el('tc-t2').classList.add('sending'); el('tc-t3').classList.add('sending');
+  await delay(500);
+  el('tc-t2').classList.remove('sending'); el('tc-t2').classList.add('sent');
+  el('tc-t3').classList.remove('sending'); el('tc-t3').classList.add('sent');
+  el('tc-t2-status').textContent='🔒 Escrow 60min'; el('tc-t2-status').style.color='var(--amber)';
+  el('tc-t3-status').textContent='🔒 Escrow '+s.t3Hold; el('tc-t3-status').style.color='var(--purple)';
+  setTime('ft4','✓ '+now()+' · T2 + T3 en escrow TriqLog');
+  markStep('fs4','done');
+  addTxLog('🔒','escrow','T2 Escrow (60 min GPS)','ESCROW-T2-'+uuid().slice(0,6).toUpperCase(),s.t2,'purple','HELD','txs-hold');
+  addTxLog('🔒','escrow','T3 Escrow ('+s.t3Hold+')','ESCROW-T3-'+uuid().slice(0,6).toUpperCase(),s.t3,'purple','HELD','txs-hold');
+
+  // Step 5: platform fee
+  markStep('fs5','active-step');
+  await delay(300);
+  setTime('ft5','✓ '+now()+' · platform_revenue · MAD '+fmt(s.feeAmt)+' enregistré');
+  markStep('fs5','done');
+  addTxLog('💼','fee','Platform Fee ('+s.feeRate+'%)','SHL-FEE-'+uuid().slice(0,6).toUpperCase(),s.feeAmt,'red','REVENUE','txs-ok');
+
+  el('demoStatus').textContent='T1 complet · Scan DEST pour T2';
+  el('demoStatus').style.color='var(--green)';
+  el('btnDestScan').disabled=false;
+  demoPhase='t2-ready';
+}
+
+async function runDestScan(){
+  if(demoPhase!=='t2-ready') return;
+  demoPhase='t2';
+  el('btnDestScan').disabled=true;
+  el('demoStatus').textContent='Destination confirmée · T2 en comptage…';
+  el('demoStatus').style.color='var(--amber)';
+  toast('📍 Livraison confirmée','Minuteur 60 min démarré · T2 MAD '+fmt(splitData.t2)+' en attente');
+  el('tc-t2-status').textContent='⏱ 60:00 comptage';
+  el('tc-t2-status').style.color='var(--amber)';
+
+  await delay(1500);
+  // Simulate 60 min passing instantly in demo
+  el('tc-t2').classList.remove('sent'); el('tc-t2').classList.add('sent');
+  el('tc-t2-status').textContent='✓ Libéré'; el('tc-t2-status').style.color='var(--green)';
+  addTxLog('💵','cash','T2 Released — '+PROVIDER_LABELS[selectedProvider],'T2-'+uuid().slice(0,6).toUpperCase(),splitData.t2,'green','SUCCESS','txs-ok');
+  toast('✅ T2 libéré','MAD '+fmt(splitData.t2)+' versé après 60 min GPS','g');
+
+  el('demoStatus').textContent='T2 libéré · T3 en attente';
+  el('btnT3Release').disabled=false;
+  demoPhase='t3-ready';
+}
+
+async function runT3Release(){
+  if(demoPhase!=='t3-ready') return;
+  demoPhase='t3';
+  el('btnT3Release').disabled=true;
+  const isEarly = payoutMode==='EXPRESS' || splitData.t3Hold==='IMMEDIATE';
+  const fee     = isEarly ? Math.round(splitData.t3*0.05*100)/100 : 0;
+  const net     = Math.round((splitData.t3 - fee)*100)/100;
+
+  el('tc-t3').classList.remove('sent');
+  el('tc-t3').classList.add('sending');
+  await delay(800);
+  el('tc-t3').classList.remove('sending'); el('tc-t3').classList.add('sent');
+  el('tc-t3-status').textContent='✓ Libéré'+(isEarly?' (−5%)':'');
+  el('tc-t3-status').style.color='var(--green)';
+
+  addTxLog('💵','cash','T3 Released'+(isEarly?' Early −5%':''),'T3-'+uuid().slice(0,6).toUpperCase(),net,'green','SUCCESS','txs-ok');
+  if(fee>0) addTxLog('💼','fee','Early Release Fee 5%','SHL-EARLY-'+uuid().slice(0,5).toUpperCase(),fee,'red','REVENUE','txs-ok');
+  addTxLog('🧾','escrow','E-Invoice DGI générée','INV-2026-'+Math.floor(Math.random()*9000+1000),splitData.gross,'green','FILED','txs-ok');
+
+  el('demoStatus').textContent='✅ Voyage complet · Facture DGI émise';
+  el('demoStatus').style.color='var(--green)';
+  toast('🎉 Voyage terminé','MAD '+fmt(net)+' net total · DGI invoice émise','g');
+  demoPhase='complete';
+}
+
+function resetDemo(){
+  demoPhase='idle';
+  ['fs0','fs1','fs2','fs3','fs4','fs5'].forEach(id=>{
+    const s=el(id); if(s){s.classList.remove('done','active-step');}
+  });
+  ['ft0','ft1','ft2','ft3','ft4','ft5'].forEach(id=>setTime(id,'En attente…'));
+  ['tc-fuel','tc-cash','tc-t2','tc-t3'].forEach(id=>{
+    const c=el(id); if(c){c.classList.remove('sent','sending');}
+  });
+  el('tc-fuel-status').textContent='En attente'; el('tc-fuel-status').style.color='var(--text3)';
+  el('tc-cash-status').textContent='En attente'; el('tc-cash-status').style.color='var(--text3)';
+  el('tc-t2-status').textContent='En attente'; el('tc-t2-status').style.color='var(--text3)';
+  el('tc-t3-status').textContent='En attente'; el('tc-t3-status').style.color='var(--text3)';
+  el('tc-fuel-ref').textContent='—'; el('tc-cash-ref').textContent='—';
+  el('demoStatus').textContent='En attente'; el('demoStatus').style.color='var(--text3)';
+  el('btnOriginScan').disabled=false;
+  el('btnDestScan').disabled=true;
+  el('btnT3Release').disabled=true;
+  el('txLog').innerHTML='<div style="padding:14px 20px;font-size:12px;color:var(--text3);font-family:\'IBM Plex Mono\',monospace;">En attente du premier événement QR_SCAN_SUCCESS…</div>';
+  recalc();
+}
+
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+recalc();
+</script>
+</body>
+</html>

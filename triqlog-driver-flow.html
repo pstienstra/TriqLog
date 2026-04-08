@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>TriqLog — Driver QR Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root {
+  --bg:#0B0D14;--bg2:#101318;--bg3:#151820;
+  --surface:#1A1D28;--surface2:#20243A;--surface3:#272C42;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --amber:#F0B429;--amber2:#FFD166;--amber-dim:rgba(240,180,41,0.13);--amber-glow:rgba(240,180,41,0.06);
+  --green:#22C55E;--green2:#4ADE80;--green-dim:rgba(34,197,94,0.12);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.11);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,0.10);
+  --teal:#2DD4BF;--teal-dim:rgba(45,212,191,0.10);
+  --text:#EEF0FA;--text2:#8891AE;--text3:#454C6A;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  height: 100%;
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── Phone shell ── */
+.phone {
+  width: 390px;
+  height: 844px;
+  margin: 16px auto;
+  background: var(--bg);
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+@media (max-width: 430px) {
+  html, body { overflow: auto; }
+  .phone { width:100%; height:auto; min-height:100vh; border-radius:0; margin:0; box-shadow:none; }
+}
+
+/* ── Status bar ── */
+.sbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 24px 6px;
+  font-size: 12px; font-weight: 700;
+  background: var(--bg);
+  position: sticky; top: 0; z-index: 30;
+}
+.sbar-time { font-size: 15px; font-weight: 800; }
+.sbar-icons { display:flex; gap:5px; align-items:center; font-size:12px; }
+
+/* ── Scroll area ── */
+.scroll {
+  height: calc(844px - 70px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  padding-bottom: 80px;
+}
+@media (max-width:430px) { .scroll { height: auto; min-height: calc(100vh - 70px); } }
+
+/* ── Bottom nav ── */
+.bnav {
+  position: absolute; bottom:0; left:0; right:0;
+  height: 70px;
+  background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 4px 14px;
+}
+.nt {
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding: 8px 2px; cursor:pointer; border:none; background:none; border-radius:10px;
+}
+.nt-ico { font-size:20px; }
+.nt-lbl { font-size:9px; font-weight:700; color:var(--text3); }
+.nt.active .nt-lbl { color:var(--amber); }
+.nb {
+  position:absolute; top:4px; right: calc(50% - 18px);
+  width:15px; height:15px; border-radius:50%;
+  background:var(--red); color:#fff; font-size:8px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  border: 2px solid var(--bg2);
+}
+
+/* ── Screens ── */
+.scr { display:none; animation: fadeUp .22s ease; }
+.scr.active { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+
+/* ── Section header inside phone ── */
+.ph { display:flex; justify-content:space-between; align-items:center; padding:14px 16px 8px; }
+.ph-title { font-size:12px; font-weight:800; color:var(--text3); text-transform:uppercase; letter-spacing:.8px; font-family:'IBM Plex Mono',monospace; }
+.ph-link  { font-size:12px; font-weight:700; color:var(--amber); cursor:pointer; }
+
+/* ── Driver hero card ── */
+.driver-hero {
+  margin: 12px;
+  background: linear-gradient(135deg,#151A08,#1E2510);
+  border: 1px solid rgba(240,180,41,0.25);
+  border-radius: 16px; padding:18px;
+  position:relative; overflow:hidden;
+}
+.driver-hero::before { content:'🚛'; position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:42px; opacity:.09; }
+.dh-tier { display:inline-flex; align-items:center; gap:5px; background:var(--amber-dim); border:1px solid rgba(240,180,41,0.3); border-radius:100px; padding:3px 12px; font-size:9px; font-weight:800; color:var(--amber); font-family:'IBM Plex Mono',monospace; margin-bottom:8px; }
+.dh-name { font-size:18px; font-weight:900; margin-bottom:3px; }
+.dh-sub  { font-size:11px; color:var(--text3); }
+
+/* ── Trip card ── */
+.trip-card {
+  margin: 0 12px 10px;
+  background: var(--surface); border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+}
+.tc-head {
+  display:flex; align-items:center; gap:10px;
+  padding:12px 14px; background:var(--surface2); border-bottom:1px solid var(--border);
+}
+.tc-badge { background:var(--amber); color:#0A0700; border-radius:100px; padding:3px 12px; font-size:9px; font-weight:800; font-family:'IBM Plex Mono',monospace; }
+.tc-lot   { font-size:11px; color:var(--text3); font-family:'IBM Plex Mono',monospace; }
+.tc-body  { padding:14px; }
+.tc-route { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.tc-city  { font-size:16px; font-weight:800; }
+.tc-arr   { color:var(--amber); font-size:16px; }
+.tc-chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px; }
+.chip     { background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:100px; padding:3px 10px; font-size:11px; color:var(--text2); }
+
+/* ── Payment strip ── */
+.pay-strip {
+  display:flex; border-top:1px solid var(--border);
+}
+.ps-cell { flex:1; padding:10px 8px; text-align:center; border-right:1px solid var(--border); }
+.ps-cell:last-child { border-right:none; }
+.ps-lbl { font-size:8px; color:var(--text3); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+.ps-val { font-size:14px; font-weight:900; }
+.ps-when { font-size:9px; color:var(--text3); margin-top:2px; }
+
+/* ── Progress milestones ── */
+.progress-section { margin:0 12px 10px; }
+.prog-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:11px; color:var(--text3); font-family:'IBM Plex Mono',monospace; }
+.prog-track {
+  position:relative; height:60px;
+}
+.prog-line {
+  position:absolute; top:19px; left:20px; right:20px;
+  height:3px; background:rgba(255,255,255,0.07); border-radius:2px; z-index:0;
+}
+.prog-fill {
+  height:100%; border-radius:2px;
+  background:linear-gradient(90deg,var(--green),var(--amber));
+  transition: width .6s ease;
+}
+.milestones { position:relative; display:flex; justify-content:space-between; }
+.milestone  { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.m-circle {
+  width:38px; height:38px; border-radius:50%; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:900; border:2px solid var(--border2);
+  background:var(--surface2); transition:all .4s;
+}
+.m-circle.done   { background:var(--green);  border-color:var(--green);  color:#021008; font-size:16px; box-shadow:0 0 14px rgba(34,197,94,.4); }
+.m-circle.active { background:var(--amber);  border-color:var(--amber);  color:#0A0700; box-shadow:0 0 14px rgba(240,180,41,.5); animation:mPulse 1.8s ease-in-out infinite; }
+.m-circle.locked { background:var(--surface3); border-color:var(--border); color:var(--text3); }
+@keyframes mPulse { 0%,100%{box-shadow:0 0 14px rgba(240,180,41,.4);}50%{box-shadow:0 0 22px rgba(240,180,41,.8),0 0 0 6px rgba(240,180,41,.1);} }
+.m-label { font-size:9px; color:var(--text3); font-family:'IBM Plex Mono',monospace; text-align:center; max-width:56px; }
+.m-amount{ font-size:10px; font-weight:800; }
+
+/* ── BIG ACTION BUTTON ── */
+.action-btn {
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  width:calc(100% - 24px); margin:0 12px 10px;
+  padding:18px; border-radius:14px; border:none; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:16px; font-weight:900;
+  transition:all .2s; position:relative; overflow:hidden;
+}
+.action-btn:active { transform:scale(.97); }
+.action-btn.green-btn  { background:linear-gradient(135deg,var(--green),#16A34A); color:#021008; box-shadow:0 6px 20px rgba(34,197,94,.3); }
+.action-btn.amber-btn  { background:linear-gradient(135deg,var(--amber),#C07A10);  color:#0A0600; box-shadow:0 6px 20px rgba(240,180,41,.3); }
+.action-btn.grey-btn   { background:rgba(255,255,255,.05); color:var(--text3); border:1px solid var(--border); cursor:not-allowed; box-shadow:none; }
+.action-btn.teal-btn   { background:linear-gradient(135deg,var(--teal),#1A9E8A); color:#021410; box-shadow:0 6px 20px rgba(45,212,191,.3); }
+.action-btn .btn-icon  { font-size:22px; }
+
+/* ── COUNTDOWN WIDGET ── */
+.countdown-widget {
+  margin:0 12px 10px;
+  background:var(--amber-glow); border:1px solid rgba(240,180,41,.2);
+  border-radius:14px; padding:14px 16px;
+  display:flex; align-items:center; gap:14px;
+}
+.cd-coin { font-size:36px; animation:cdBob 1.6s ease-in-out infinite; }
+@keyframes cdBob { 0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);} }
+.cd-body { flex:1; }
+.cd-title { font-size:12px; font-weight:800; color:var(--amber); margin-bottom:3px; }
+.cd-sub   { font-size:11px; color:var(--text2); }
+.cd-time  {
+  font-size:22px; font-weight:900; color:var(--amber);
+  font-family:'IBM Plex Mono',monospace; letter-spacing:2px;
+  white-space:nowrap;
+}
+.cd-bar-wrap { height:4px; background:rgba(255,255,255,.07); border-radius:2px; overflow:hidden; margin-top:8px; }
+.cd-bar { height:100%; background:linear-gradient(90deg,var(--amber),var(--amber2)); border-radius:2px; transition:width .5s ease; }
+
+/* ── INFO NOTES ── */
+.info-note {
+  margin:0 12px 10px; padding:11px 13px;
+  border-radius:10px; display:flex; align-items:flex-start; gap:9px;
+  font-size:12px; line-height:1.55;
+}
+.info-note.amber { background:var(--amber-glow); border:1px solid rgba(240,180,41,.18); }
+.info-note.green { background:var(--green-dim);  border:1px solid rgba(34,197,94,.18); }
+.info-note.blue  { background:var(--blue-dim);   border:1px solid rgba(96,165,250,.18); }
+.in-ico { font-size:17px; flex-shrink:0; }
+.in-txt { color:var(--text2); }
+.in-txt strong { color:var(--text); }
+
+/* ══════════════════════════════
+   QR MODAL OVERLAY
+══════════════════════════════ */
+.qr-modal-overlay {
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0); backdrop-filter:blur(0px);
+  z-index:100; display:flex; align-items:flex-end;
+  pointer-events:none;
+  transition:background .3s, backdrop-filter .3s;
+}
+.qr-modal-overlay.open {
+  background:rgba(0,0,0,0.75); backdrop-filter:blur(8px);
+  pointer-events:all;
+}
+
+.qr-sheet {
+  width:100%; background:var(--bg2);
+  border-radius:28px 28px 0 0;
+  padding:0 0 32px;
+  transform:translateY(100%);
+  transition:transform .38s cubic-bezier(0.32,0.72,0,1);
+  overflow:hidden;
+}
+.qr-modal-overlay.open .qr-sheet {
+  transform:translateY(0);
+}
+
+/* Sheet handle */
+.qr-handle { width:38px; height:4px; background:rgba(255,255,255,.2); border-radius:2px; margin:12px auto 0; }
+
+/* Sheet header */
+.qr-sheet-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 20px 12px;
+}
+.qsh-left {}
+.qsh-type { font-size:13px; font-weight:900; margin-bottom:3px; }
+.qsh-sub  { font-size:11px; color:var(--text3); font-family:'IBM Plex Mono',monospace; }
+.qsh-close {
+  width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.08);
+  border:none; color:var(--text2); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.qsh-close:active { background:rgba(255,255,255,.15); }
+
+/* QR display area */
+.qr-display-area {
+  display:flex; flex-direction:column; align-items:center; padding:16px 20px 0;
+}
+
+/* QR "reveal" animation */
+.qr-reveal {
+  position:relative;
+  opacity:0; transform:scale(.9);
+  transition:opacity .35s .05s, transform .35s .05s cubic-bezier(.17,.67,.35,1.2);
+}
+.qr-modal-overlay.open .qr-reveal {
+  opacity:1; transform:scale(1);
+}
+
+.qr-frame {
+  background:white; border-radius:16px; padding:14px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  position:relative;
+}
+.qr-frame img { width:220px; height:220px; display:block; }
+
+/* Animated corner brackets */
+.qr-bracket {
+  position:absolute; width:22px; height:22px;
+  transition:all .3s .1s;
+}
+.qr-bracket.tl { top:6px;    left:6px;   border-top:3px solid var(--amber); border-left:3px solid var(--amber); }
+.qr-bracket.tr { top:6px;    right:6px;  border-top:3px solid var(--amber); border-right:3px solid var(--amber); }
+.qr-bracket.bl { bottom:6px; left:6px;   border-bottom:3px solid var(--amber); border-left:3px solid var(--amber); }
+.qr-bracket.br { bottom:6px; right:6px;  border-bottom:3px solid var(--amber); border-right:3px solid var(--amber); }
+.qr-frame.green-frame .qr-bracket { border-color:var(--green) !important; }
+
+/* Scan line animation */
+.qr-scanline {
+  position:absolute; left:14px; right:14px; height:2px;
+  background:linear-gradient(90deg, transparent, var(--amber), transparent);
+  animation:scanDown 2s ease-in-out infinite;
+  box-shadow:0 0 8px var(--amber);
+}
+.qr-frame.green-frame .qr-scanline {
+  background:linear-gradient(90deg,transparent,var(--green),transparent);
+  box-shadow:0 0 8px var(--green);
+}
+@keyframes scanDown { 0%{top:14px;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:calc(100% - 18px);opacity:0;} }
+
+/* QR info below image */
+.qr-info {
+  margin-top:16px; text-align:center; width:100%;
+}
+.qr-lot  { font-size:16px; font-weight:900; color:var(--text); margin-bottom:4px; }
+.qr-desc { font-size:12px; color:var(--text2); margin-bottom:12px; line-height:1.5; }
+.qr-sig  { font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--text3); background:rgba(255,255,255,.04); border-radius:8px; padding:6px 10px; word-break:break-all; }
+
+/* Verify status */
+.qr-verify-status {
+  width:100%; margin:12px 0 0; padding:12px 14px;
+  border-radius:10px; display:flex; align-items:center; gap:10px;
+  font-size:13px; font-weight:700;
+  transition:all .3s;
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+}
+.qr-verify-status.valid   { background:var(--green-dim); border-color:rgba(34,197,94,.25); color:var(--green); }
+.qr-verify-status.invalid { background:var(--red-dim);   border-color:rgba(239,68,68,.2);  color:var(--red); }
+.qv-icon { font-size:20px; }
+
+/* Confirm button inside modal */
+.qr-confirm-btn {
+  width:100%; margin-top:14px; padding:15px;
+  border-radius:12px; border:none; cursor:pointer;
+  font-family:'Outfit',sans-serif; font-size:15px; font-weight:900;
+  transition:all .2s;
+}
+.qr-confirm-btn:active { transform:scale(.97); }
+.qr-confirm-btn.green { background:linear-gradient(135deg,var(--green),#16A34A); color:#021008; box-shadow:0 4px 16px rgba(34,197,94,.3); }
+.qr-confirm-btn.amber { background:linear-gradient(135deg,var(--amber),#C07A10);  color:#0A0700; box-shadow:0 4px 16px rgba(240,180,41,.3); }
+.qr-confirm-btn.disabled { background:rgba(255,255,255,.06); color:var(--text3); cursor:not-allowed; box-shadow:none; }
+
+/* Sheet padding sides */
+.sheet-pad { padding:0 20px; }
+
+/* ── Toast ── */
+.toast {
+  position:absolute; bottom:82px; left:12px; right:12px; z-index:200;
+  background:var(--surface2); border:1px solid var(--border2);
+  border-left:3px solid var(--amber); border-radius:12px;
+  padding:12px 16px; box-shadow:0 8px 32px rgba(0,0,0,.6);
+  transform:translateY(16px); opacity:0; pointer-events:none;
+  transition:all .3s ease;
+}
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.green-toast { border-left-color:var(--green); }
+.toast-title { font-weight:800; font-size:13px; color:var(--amber); margin-bottom:2px; }
+.toast.green-toast .toast-title { color:var(--green); }
+.toast-body { font-size:12px; color:var(--text2); }
+
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:2px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const QR_ORIGIN_URL     = "data:image/png;base64,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";
+const QR_DEST_URL       = "data:image/png;base64,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";
+const QR_ORIGIN_PAYLOAD = "{\"shipmentId\":\"ship-LOT8821\",\"lotNumber\":\"LOT-8821\",\"type\":\"ORIGIN\",\"timestamp\":1775525898059,\"v\":1,\"sig\":\"4c0d5b6ffa27fce80aad2f35d9e63351\"}";
+const QR_DEST_PAYLOAD   = "{\"shipmentId\":\"ship-LOT8821\",\"lotNumber\":\"LOT-8821\",\"type\":\"DESTINATION\",\"timestamp\":1775525898166,\"v\":1,\"sig\":\"559f4a253ab48463d6d5e3d4cb5c72dc\"}";
+// ══════════════════════════════════════════════════════
+// TRIQLOG — Driver Flow App
+// QR code only appears when driver taps the action button.
+// State machine: PENDING → PICKED_UP → ARRIVED → T2_COUNTING → T2_DONE → COMPLETE
+// ══════════════════════════════════════════════════════
+
+// ── Clock ─────────────────────────────────────────────
+function updateClock() {
+  const n = new Date();
+  const t = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  document.querySelectorAll('.sbar-time').forEach(el => el.textContent = t);
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// ── State ─────────────────────────────────────────────
+const State = {
+  PENDING:     'PENDING',
+  PICKED_UP:   'PICKED_UP',
+  IN_TRANSIT:  'IN_TRANSIT',
+  ARRIVED:     'ARRIVED',
+  T2_COUNTING: 'T2_COUNTING',
+  T2_DONE:     'T2_DONE',
+  T3_HOLDING:  'T3_HOLDING',
+  COMPLETE:    'COMPLETE',
+};
+
+// Shipment data
+const shipment = {
+  lotNumber:     'LOT-8821',
+  origin:        'Béni Mellal',
+  destination:   'Casablanca',
+  weight:        '22T',
+  cargo:         'Matériaux construction',
+  gross:         7000,
+  driver:        'Hassan Benali',
+  shipper:       'Bricoma SARL',
+  state:         State.PENDING,
+
+  // Computed on init
+  fee:           0, net: 0, t1: 0, t2: 0, t3: 0,
+
+  t2HoldStart:   null,
+  t2SecsLeft:    60 * 60,
+  t2Timer:       null,
+  t1Released:    false,
+  t2Released:    false,
+  t3Released:    false,
+};
+
+// Compute split
+shipment.fee = Math.round(shipment.gross * 0.03);
+shipment.net = shipment.gross - shipment.fee;
+shipment.t1  = Math.round(shipment.net * 0.50);
+shipment.t2  = Math.round(shipment.net * 0.25);
+shipment.t3  = shipment.net - shipment.t1 - shipment.t2;
+
+// ── QR Verification (HMAC-SHA256 via Web Crypto) ──────
+const QR_SECRET = 'triqlog-dev-secret-change-in-prod';
+
+async function hmac256(key, message) {
+  const enc     = new TextEncoder();
+  const keyData = await crypto.subtle.importKey('raw', enc.encode(key), { name:'HMAC', hash:'SHA-256' }, false, ['sign']);
+  const sig     = await crypto.subtle.sign('HMAC', keyData, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('').slice(0, 32);
+}
+
+async function verifyQRPayload(qrString, expectedType) {
+  try {
+    const data = JSON.parse(qrString);
+    const required = ['shipmentId','lotNumber','type','timestamp','sig'];
+    for (const f of required) {
+      if (data[f] == null) return { valid: false, reason: 'Champ manquant: ' + f };
+    }
+    const { sig, ...rest } = data;
+    const expected = await hmac256(QR_SECRET, JSON.stringify(rest));
+    if (sig !== expected) return { valid: false, reason: 'Signature invalide — QR falsifié' };
+    const maxAge = data.type === 'ORIGIN' ? 48 * 3600000 : 7 * 24 * 3600000;
+    if (Date.now() - data.timestamp > maxAge) return { valid: false, reason: 'QR expiré' };
+    if (data.type !== expectedType) return { valid: false, reason: 'Mauvais type: ' + data.type };
+    return { valid: true, data };
+  } catch (e) {
+    return { valid: false, reason: 'Format invalide' };
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(title, body, type = 'amber') {
+  const el = document.getElementById('toast');
+  el.querySelector('.toast-title').textContent = title;
+  el.querySelector('.toast-body').textContent  = body;
+  el.className = 'toast show' + (type === 'green' ? ' green-toast' : '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
+  // Haptic (Android)
+  if (navigator.vibrate) navigator.vibrate(type === 'green' ? [60, 30, 60] : [80]);
+}
+
+// ── Navigation ────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('active'));
+  document.getElementById('scr-' + id).classList.add('active');
+  document.querySelectorAll('.nt').forEach(t => t.classList.remove('active'));
+  const tab = document.getElementById('nt-' + id);
+  if (tab) tab.classList.add('active');
+  document.querySelector('.scroll').scrollTop = 0;
+}
+
+// ── QR MODAL ─────────────────────────────────────────
+let qrModalType = null;   // 'ORIGIN' | 'DESTINATION'
+let qrVerified  = false;
+
+function openQRModal(type) {
+  qrModalType = type;
+  qrVerified  = false;
+
+  const overlay = document.getElementById('qrOverlay');
+  const frame   = document.getElementById('qrFrame');
+  const img     = document.getElementById('qrImg');
+  const title   = document.getElementById('qshType');
+  const sub     = document.getElementById('qshSub');
+  const desc    = document.getElementById('qrDesc');
+  const verEl   = document.getElementById('qrVerifyStatus');
+  const confBtn = document.getElementById('qrConfirmBtn');
+
+  // Set content based on type
+  if (type === 'ORIGIN') {
+    img.src          = QR_ORIGIN_URL;
+    title.textContent = '📍 QR Prise en charge';
+    sub.textContent   = 'Faites scanner par le chargeur au départ';
+    desc.textContent  = 'LOT-8821 · Béni Mellal — présentez ce code au chargeur pour confirmer le départ.';
+    frame.classList.remove('green-frame');
+    confBtn.textContent = '✓ Confirmer le scan';
+    confBtn.className   = 'qr-confirm-btn amber disabled';
+  } else {
+    img.src          = QR_DEST_URL;
+    title.textContent = '🏁 QR Livraison';
+    sub.textContent   = 'Faites scanner par le destinataire à l\'arrivée';
+    desc.textContent  = 'LOT-8821 · Casablanca ZI — présentez ce code au destinataire pour confirmer la livraison.';
+    frame.classList.add('green-frame');
+    confBtn.textContent = '✓ Confirmer la livraison';
+    confBtn.className   = 'qr-confirm-btn green disabled';
+  }
+
+  // Show sig preview
+  const payload = type === 'ORIGIN' ? QR_ORIGIN_PAYLOAD : QR_DEST_PAYLOAD;
+  const parsed  = JSON.parse(payload);
+  document.getElementById('qrSig').textContent = 'sig: ' + parsed.sig;
+
+  // Reset verify status
+  verEl.className   = 'qr-verify-status';
+  verEl.innerHTML   = '<span class="qv-icon">⏳</span> Vérification HMAC en cours…';
+  confBtn.disabled  = true;
+
+  // Open modal
+  overlay.classList.add('open');
+
+  // Auto-verify after short delay (simulates scan)
+  setTimeout(() => autoVerify(type, payload, verEl, confBtn), 800);
+}
+
+async function autoVerify(type, payload, verEl, confBtn) {
+  const result = await verifyQRPayload(payload, type);
+  if (result.valid) {
+    verEl.className = 'qr-verify-status valid';
+    verEl.innerHTML = '<span class="qv-icon">✅</span> Signature valide — QR authentique';
+    qrVerified = true;
+    const btn = document.getElementById('qrConfirmBtn');
+    btn.disabled  = false;
+    btn.className = btn.className.replace('disabled', type === 'ORIGIN' ? 'amber' : 'green');
+  } else {
+    verEl.className = 'qr-verify-status invalid';
+    verEl.innerHTML = '<span class="qv-icon">❌</span> ' + result.reason;
+  }
+}
+
+function closeQRModal() {
+  document.getElementById('qrOverlay').classList.remove('open');
+  qrModalType = null;
+  qrVerified  = false;
+}
+
+function confirmQRScan() {
+  if (!qrVerified) return;
+  closeQRModal();
+
+  if (qrModalType === 'ORIGIN') {
+    onOriginConfirmed();
+  } else if (qrModalType === 'DESTINATION') {
+    onDestinationConfirmed();
+  }
+}
+
+// ── State transitions ─────────────────────────────────
+
+function onOriginConfirmed() {
+  shipment.state       = State.PICKED_UP;
+  shipment.t1Released  = true;
+  renderHome();
+  showToast('💰 MAD ' + fmt(shipment.t1) + ' versés !', '50% libéré. Bonne route !', 'green');
+  // After brief pause, move to in-transit
+  setTimeout(() => { shipment.state = State.IN_TRANSIT; renderHome(); }, 1000);
+}
+
+function onDestinationConfirmed() {
+  shipment.state       = State.T2_COUNTING;
+  shipment.t2HoldStart = Date.now();
+  shipment.t2SecsLeft  = 60 * 60;
+  renderHome();
+  showToast('📍 Arrivée confirmée', 'Minuteur 60 min démarré — MAD ' + fmt(shipment.t2) + ' en attente', 'amber');
+  startT2Timer();
+}
+
+function startT2Timer() {
+  if (shipment.t2Timer) clearInterval(shipment.t2Timer);
+  shipment.t2Timer = setInterval(() => {
+    shipment.t2SecsLeft--;
+    updateCountdown();
+    if (shipment.t2SecsLeft <= 0) {
+      clearInterval(shipment.t2Timer);
+      shipment.state      = State.T2_DONE;
+      shipment.t2Released = true;
+      renderHome();
+      showToast('✅ MAD ' + fmt(shipment.t2) + ' libérés !', '60 min écoulées — Tranche 2 versée', 'green');
+      // Start 24h T3 hold
+      setTimeout(() => { shipment.state = State.T3_HOLDING; renderHome(); }, 800);
+    }
+  }, 1000);
+}
+
+function updateCountdown() {
+  const el = document.getElementById('cdTimer');
+  const bar = document.getElementById('cdBar');
+  if (!el) return;
+  el.textContent = formatTimer(shipment.t2SecsLeft);
+  const pct = Math.round(((3600 - shipment.t2SecsLeft) / 3600) * 100);
+  if (bar) bar.style.width = pct + '%';
+}
+
+function simulateArrival() {
+  // GPS simulated arrival for demo — shows the delivery QR button
+  shipment.state = State.ARRIVED;
+  renderHome();
+  showToast('📍 GPS : Arrivée détectée', 'Vous êtes à moins de 500m de la destination', 'amber');
+}
+
+// ── Formatters ────────────────────────────────────────
+function fmt(n) { return Number(n).toLocaleString('fr-MA'); }
+function formatTimer(secs) {
+  const h = String(Math.floor(secs / 3600)).padStart(2,'0');
+  const m = String(Math.floor((secs % 3600) / 60)).padStart(2,'0');
+  const s = String(secs % 60).padStart(2,'0');
+  return h + ':' + m + ':' + s;
+}
+
+// ── Progress bar width per state ─────────────────────
+function getProgressPct(state) {
+  const map = {
+    [State.PENDING]:     0,
+    [State.PICKED_UP]:   33,
+    [State.IN_TRANSIT]:  50,
+    [State.ARRIVED]:     55,
+    [State.T2_COUNTING]: 66,
+    [State.T2_DONE]:     85,
+    [State.T3_HOLDING]:  90,
+    [State.COMPLETE]:    100,
+  };
+  return map[state] || 0;
+}
+
+// ── Milestone state helpers ───────────────────────────
+function m1State(s) {
+  if ([State.PICKED_UP,State.IN_TRANSIT,State.ARRIVED,State.T2_COUNTING,State.T2_DONE,State.T3_HOLDING,State.COMPLETE].includes(s)) return 'done';
+  if (s === State.PENDING) return 'active';
+  return 'locked';
+}
+function m2State(s) {
+  if ([State.T2_DONE,State.T3_HOLDING,State.COMPLETE].includes(s)) return 'done';
+  if ([State.ARRIVED,State.T2_COUNTING].includes(s)) return 'active';
+  return 'locked';
+}
+function m3State(s) {
+  if (s === State.COMPLETE) return 'done';
+  if (s === State.T3_HOLDING) return 'active';
+  return 'locked';
+}
+
+// ── Render home screen ────────────────────────────────
+function renderHome() {
+  const s     = shipment;
+  const state = s.state;
+
+  // ── Status badge text
+  const statusMap = {
+    [State.PENDING]:     ['EN ATTENTE',  '#F0B429'],
+    [State.PICKED_UP]:   ['PRIS EN CHARGE','#22C55E'],
+    [State.IN_TRANSIT]:  ['EN ROUTE',    '#F0B429'],
+    [State.ARRIVED]:     ['ARRIVÉ',      '#60A5FA'],
+    [State.T2_COUNTING]: ['60 MIN ⏱',   '#F0B429'],
+    [State.T2_DONE]:     ['T2 ✓',        '#22C55E'],
+    [State.T3_HOLDING]:  ['ATTENTE T3',  '#C084FC'],
+    [State.COMPLETE]:    ['TERMINÉ ✓',   '#22C55E'],
+  };
+  const [statusLabel, statusColor] = statusMap[state] || ['',  '#fff'];
+
+  // ── Action button config
+  let actionBtn = '';
+  if (state === State.PENDING) {
+    actionBtn = `<button class="action-btn amber-btn" onclick="openQRModal('ORIGIN')">
+      <span class="btn-icon">📋</span> Confirmer la prise en charge
+    </button>`;
+  } else if (state === State.IN_TRANSIT) {
+    actionBtn = `<button class="action-btn grey-btn" onclick="simulateArrival()">
+      <span class="btn-icon">🚛</span> En route… (simuler arrivée GPS)
+    </button>`;
+  } else if (state === State.ARRIVED) {
+    actionBtn = `<button class="action-btn green-btn" onclick="openQRModal('DESTINATION')">
+      <span class="btn-icon">📋</span> Confirmer la livraison
+    </button>`;
+  } else if (state === State.T2_COUNTING) {
+    actionBtn = `<button class="action-btn grey-btn" disabled>
+      <span class="btn-icon">⏳</span> Minuteur en cours…
+    </button>`;
+  } else if (state === State.T3_HOLDING) {
+    actionBtn = `<button class="action-btn teal-btn" onclick="showToast('⚡ Early Release','MAD ${fmt(Math.round(s.t3*0.95))} versés maintenant. Frais 5% = MAD ${fmt(Math.round(s.t3*0.05))}','green')">
+      <span class="btn-icon">⚡</span> Early Release — MAD ${fmt(Math.round(s.t3 * 0.95))} (−5%)
+    </button>`;
+  } else if (state === State.COMPLETE) {
+    actionBtn = `<button class="action-btn green-btn" onclick="showToast('🎉 Terminé','Voyage complet. MAD ${fmt(s.net)} net total versé.','green')">
+      <span class="btn-icon">🎉</span> Voyage terminé — Voir le reçu
+    </button>`;
+  } else {
+    actionBtn = `<button class="action-btn grey-btn" disabled>
+      <span class="btn-icon">⏳</span> En traitement…
+    </button>`;
+  }
+
+  // ── Milestone classes
+  const [mc1,mc2,mc3] = [m1State(state), m2State(state), m3State(state)];
+  const m1Icon = mc1==='done'?'✓' : mc1==='active'?'📍':'📍';
+  const m2Icon = mc2==='done'?'✓' : mc2==='active'?'⏱':'🏁';
+  const m3Icon = mc3==='done'?'✓' : mc3==='active'?'🔓':'🔒';
+
+  // ── T2 countdown widget (only when counting)
+  let countdownHTML = '';
+  if (state === State.T2_COUNTING) {
+    countdownHTML = `
+    <div class="countdown-widget">
+      <div class="cd-coin">🪙</div>
+      <div class="cd-body">
+        <div class="cd-title">Fenêtre 60 minutes</div>
+        <div class="cd-sub">MAD ${fmt(s.t2)} libéré à expiration automatique</div>
+        <div class="cd-bar-wrap"><div class="cd-bar" id="cdBar" style="width:0%"></div></div>
+      </div>
+      <div class="cd-time" id="cdTimer">${formatTimer(s.t2SecsLeft)}</div>
+    </div>`;
+  }
+
+  // ── T3 hold note
+  let t3NoteHTML = '';
+  if (state === State.T3_HOLDING) {
+    t3NoteHTML = `
+    <div class="info-note" style="background:rgba(192,132,252,.06);border:1px solid rgba(192,132,252,.18);margin:0 12px 10px;">
+      <span class="in-ico">🔒</span>
+      <div class="in-txt">
+        <strong>MAD ${fmt(s.t3)} en attente 24h</strong> — fenêtre anti-fraude. 
+        Libération automatique demain à la même heure. Ou cliquez Early Release pour recevoir maintenant (−5%).
+      </div>
+    </div>`;
+  }
+
+  // ── Info note
+  let infoHTML = '';
+  if (state === State.PENDING) {
+    infoHTML = `<div class="info-note amber"><span class="in-ico">ℹ️</span><div class="in-txt"><strong>QR non visible</strong> tant que vous n'appuyez pas sur le bouton. Il est généré côté serveur et s'affiche uniquement au moment de la confirmation.</div></div>`;
+  } else if (state === State.ARRIVED) {
+    infoHTML = `<div class="info-note green"><span class="in-ico">📍</span><div class="in-txt"><strong>GPS confirme votre arrivée</strong> à moins de 500m de la destination. Appuyez pour afficher le QR de livraison.</div></div>`;
+  }
+
+  document.getElementById('homeContent').innerHTML = `
+    <div class="driver-hero">
+      <div class="dh-tier">⭐ Conducteur Premium</div>
+      <div class="dh-name">Hassan Benali 🧔</div>
+      <div class="dh-sub">Béni Mellal · 22T · 4.8 ⭐ · 47 voyages</div>
+    </div>
+
+    <div class="trip-card">
+      <div class="tc-head">
+        <div class="tc-badge" style="background:${statusColor};color:${statusColor==='#F0B429'?'#0A0700':'#021008'}">${statusLabel}</div>
+        <div class="tc-lot">${s.lotNumber} · ${s.shipper}</div>
+      </div>
+      <div class="tc-body">
+        <div class="tc-route">
+          <div class="tc-city">${s.origin}</div>
+          <div class="tc-arr">→</div>
+          <div class="tc-city">${s.destination}</div>
+        </div>
+        <div class="tc-chips">
+          <div class="chip">🏋️ ${s.weight}</div>
+          <div class="chip">📦 ${s.cargo}</div>
+          <div class="chip">📅 Auj. 15:00</div>
+        </div>
+        <div class="pay-strip">
+          <div class="ps-cell">
+            <div class="ps-lbl">T1 · 50%</div>
+            <div class="ps-val" style="color:${s.t1Released?'var(--green)':'var(--text2)'}">${s.t1Released?'✓ ':''} MAD ${fmt(s.t1)}</div>
+            <div class="ps-when">Prise en charge</div>
+          </div>
+          <div class="ps-cell">
+            <div class="ps-lbl">T2 · 25%</div>
+            <div class="ps-val" style="color:${s.t2Released?'var(--green)':state===State.T2_COUNTING?'var(--amber)':'var(--text2)'}">${s.t2Released?'✓ ':''} MAD ${fmt(s.t2)}</div>
+            <div class="ps-when">60 min GPS</div>
+          </div>
+          <div class="ps-cell">
+            <div class="ps-lbl">T3 · 25%</div>
+            <div class="ps-val" style="color:${s.t3Released?'var(--green)':state===State.T3_HOLDING?'var(--purple)':'var(--text2)'}">${s.t3Released?'✓ ':''} MAD ${fmt(s.t3)}</div>
+            <div class="ps-when">24h anti-fraude</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="prog-header">
+        <span>Progression du lot</span>
+        <span style="color:var(--amber);font-weight:800;">MAD ${fmt(s.net)} net</span>
+      </div>
+      <div class="prog-track">
+        <div class="prog-line"><div class="prog-fill" style="width:${getProgressPct(state)}%"></div></div>
+        <div class="milestones">
+          <div class="milestone">
+            <div class="m-circle ${mc1}">${m1Icon}</div>
+            <div class="m-label">Prise en charge</div>
+            <div class="m-amount" style="color:var(--green)">MAD ${fmt(s.t1)}</div>
+          </div>
+          <div class="milestone">
+            <div class="m-circle ${mc2}">${m2Icon}</div>
+            <div class="m-label">Livraison + 60 min</div>
+            <div class="m-amount" style="color:var(--amber)">MAD ${fmt(s.t2)}</div>
+          </div>
+          <div class="milestone">
+            <div class="m-circle ${mc3}">${m3Icon}</div>
+            <div class="m-label">24h / Net30</div>
+            <div class="m-amount" style="color:var(--purple)">MAD ${fmt(s.t3)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${countdownHTML}
+    ${t3NoteHTML}
+    ${infoHTML}
+    ${actionBtn}
+  `;
+}
+
+// ── Build HTML ────────────────────────────────────────
+function buildApp() {
+  document.getElementById('app').innerHTML = `
+  <div class="phone">
+    <div class="sbar">
+      <div class="sbar-time">09:41</div>
+      <div class="sbar-icons"><span>📍</span><span>●●●●</span><span>🔋</span></div>
+    </div>
+
+    <div class="scroll">
+
+      <!-- HOME SCREEN -->
+      <div id="scr-home" class="scr active">
+        <div id="homeContent"></div>
+      </div>
+
+      <!-- WALLET SCREEN (simplified) -->
+      <div id="scr-wallet" class="scr">
+        <div class="ph"><div class="ph-title">Mon Argent</div></div>
+        <div style="margin:12px;background:linear-gradient(135deg,#0C1A0C,#0A120A);border:1px solid rgba(34,197,94,.2);border-radius:16px;padding:22px;">
+          <div style="font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Solde disponible</div>
+          <div style="font-size:36px;font-weight:900;color:var(--green);">MAD ${fmt(shipment.t1)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:6px;">+ MAD ${fmt(shipment.t2)} libéré à livraison GPS</div>
+        </div>
+        <div class="info-note blue" style="margin:0 12px 10px;">
+          <span class="in-ico">💡</span>
+          <div class="in-txt">Retrait disponible : Agent Cash Béni Mellal, Wafacash, CIH Mobile ou carte Afriquia.</div>
+        </div>
+      </div>
+
+      <!-- DOCS SCREEN (simplified) -->
+      <div id="scr-docs" class="scr">
+        <div class="ph"><div class="ph-title">Documents</div></div>
+        <div class="info-note green" style="margin:0 12px 10px;">
+          <span class="in-ico">🔐</span>
+          <div class="in-txt"><strong>Les QR codes ne sont pas stockés ici.</strong> Ils sont générés à la demande, côté serveur, et apparaissent uniquement quand vous cliquez "Confirmer" depuis l'écran d'accueil.</div>
+        </div>
+        <div style="margin:0 12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border);">
+            <div style="width:38px;height:38px;background:var(--green-dim);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🪪</div>
+            <div><div style="font-size:13px;font-weight:700;">CIN — Vérifié</div><div style="font-size:11px;color:var(--green);">✓ Expire 03/2030</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border);">
+            <div style="width:38px;height:38px;background:var(--green-dim);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">📄</div>
+            <div><div style="font-size:13px;font-weight:700;">Carte grise</div><div style="font-size:11px;color:var(--green);">✓ Vérifiée</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px;">
+            <div style="width:38px;height:38px;background:var(--amber-dim);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">🛡️</div>
+            <div><div style="font-size:13px;font-weight:700;">Assurance RC</div><div style="font-size:11px;color:var(--amber);">⏳ En cours de vérification</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /scroll -->
+
+    <!-- BOTTOM NAV -->
+    <div class="bnav">
+      <button class="nt active" id="nt-home" onclick="showScreen('home')"><span class="nt-ico">🏠</span><span class="nt-lbl">Accueil</span></button>
+      <button class="nt" id="nt-wallet" onclick="showScreen('wallet')"><span class="nt-ico">💰</span><span class="nt-lbl">Argent</span></button>
+      <button class="nt" id="nt-docs" onclick="showScreen('docs')"><span class="nt-ico">📋</span><span class="nt-lbl">Documents</span></button>
+    </div>
+
+    <!-- QR MODAL OVERLAY — Hidden until action button tapped -->
+    <div class="qr-modal-overlay" id="qrOverlay" onclick="handleOverlayClick(event)">
+      <div class="qr-sheet">
+        <div class="qr-handle"></div>
+        <div class="qr-sheet-header">
+          <div class="qsh-left">
+            <div class="qsh-type" id="qshType">QR Code</div>
+            <div class="qsh-sub"  id="qshSub">Chargement en cours…</div>
+          </div>
+          <button class="qsh-close" onclick="closeQRModal()">✕</button>
+        </div>
+        <div class="qr-display-area sheet-pad">
+          <div class="qr-reveal">
+            <div class="qr-frame" id="qrFrame">
+              <img id="qrImg" src="" alt="QR Code" />
+              <div class="qr-scanline"></div>
+              <div class="qr-bracket tl"></div>
+              <div class="qr-bracket tr"></div>
+              <div class="qr-bracket bl"></div>
+              <div class="qr-bracket br"></div>
+            </div>
+          </div>
+          <div class="qr-info">
+            <div class="qr-lot">LOT-8821</div>
+            <div class="qr-desc" id="qrDesc">Chargement…</div>
+            <div class="qr-sig"  id="qrSig">…</div>
+          </div>
+          <div class="qr-verify-status" id="qrVerifyStatus">
+            <span class="qv-icon">⏳</span> Vérification HMAC…
+          </div>
+          <button class="qr-confirm-btn disabled" id="qrConfirmBtn" onclick="confirmQRScan()" disabled>
+            Vérification…
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+      <div class="toast-title"></div>
+      <div class="toast-body"></div>
+    </div>
+  </div>
+  `;
+
+  renderHome();
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('qrOverlay')) closeQRModal();
+}
+
+// Boot
+buildApp();
+
+</script>
+</body>
+</html>

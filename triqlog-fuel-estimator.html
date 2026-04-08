@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TriqLog — Fuel Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0A0C0F;
+  --bg2:       #0F1217;
+  --bg3:       #141820;
+  --surface:   #1A1F2C;
+  --surface2:  #20263A;
+  --surface3:  #272E45;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.13);
+  --fuel:      #F97316;
+  --fuel2:     #FDBA74;
+  --fuel-dim:  rgba(249,115,22,0.12);
+  --fuel-glow: rgba(249,115,22,0.06);
+  --green:     #22C55E;
+  --green-dim: rgba(34,197,94,0.10);
+  --amber:     #F0B429;
+  --amber-dim: rgba(240,180,41,0.10);
+  --red:       #EF4444;
+  --red-dim:   rgba(239,68,68,0.10);
+  --blue:      #60A5FA;
+  --blue-dim:  rgba(96,165,250,0.09);
+  --teal:      #2DD4BF;
+  --text:      #E8EAF6;
+  --text2:     #7B82A0;
+  --text3:     #3D4460;
+  --mono:      'JetBrains Mono', monospace;
+  --sans:      'Syne', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100vh; font-family: var(--sans); background: var(--bg); color: var(--text); }
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 10% 10%, rgba(249,115,22,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 55% at 90% 85%, rgba(34,197,94,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 30% 30% at 50% 50%, rgba(249,115,22,0.02) 0%, transparent 70%);
+}
+
+.wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 24px 80px; }
+
+/* ── HEADER ── */
+.hdr {
+  padding: 48px 0 40px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 40px;
+}
+.hdr-left {}
+.hdr-eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--fuel); letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+}
+.eyebrow-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--fuel); }
+.hdr-title { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+.hdr-title span { color: var(--fuel); }
+.hdr-sub { font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.6; max-width: 500px; }
+.hdr-right { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; padding-top: 8px; }
+.tag {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 100px; padding: 5px 13px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text2);
+}
+.tag.fuel { background: var(--fuel-dim); border-color: rgba(249,115,22,.3); color: var(--fuel); }
+.tag.green { background: var(--green-dim); border-color: rgba(34,197,94,.25); color: var(--green); }
+
+/* ── MAIN GRID ── */
+.grid { display: grid; grid-template-columns: 400px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+/* ── INPUT PANEL ── */
+.input-panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+}
+.panel-header {
+  padding: 18px 22px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.panel-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--fuel-dim); border: 1px solid rgba(249,115,22,.25);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.panel-title { font-size: 14px; font-weight: 700; }
+.panel-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.panel-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── FIELDS ── */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 1px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.field-hint { font-size: 10px; color: var(--text3); font-weight: 400; font-family: var(--mono); }
+
+input[type="number"], select {
+  width: 100%;
+  background: var(--bg3); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 11px 14px;
+  font-family: var(--mono); font-size: 15px; font-weight: 500;
+  color: var(--text); outline: none;
+  transition: border-color .2s, background .2s;
+  appearance: none; -webkit-appearance: none;
+}
+input[type="number"]:focus, select:focus { border-color: var(--fuel); background: var(--bg2); }
+input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+
+/* Truck type selector — visual cards */
+.truck-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.truck-card {
+  background: var(--bg3); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 11px 12px; cursor: pointer;
+  transition: all .18s; display: flex; align-items: center; gap: 9px;
+}
+.truck-card:hover { border-color: var(--border2); background: var(--surface2); }
+.truck-card.selected {
+  border-color: var(--fuel); background: var(--fuel-glow);
+  box-shadow: 0 0 0 1px rgba(249,115,22,.15);
+}
+.tc-ico { font-size: 20px; flex-shrink: 0; }
+.tc-body {}
+.tc-name { font-size: 12px; font-weight: 700; }
+.tc-rate { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 1px; }
+.truck-card.selected .tc-rate { color: var(--fuel); }
+
+/* Toggle */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; }
+.toggle-label { font-size: 13px; font-weight: 600; }
+.toggle-sub { font-size: 11px; color: var(--text2); }
+.toggle {
+  position: relative; width: 44px; height: 24px; cursor: pointer;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: 100px;
+  background: var(--surface3); border: 1px solid var(--border2);
+  transition: all .2s;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--text3); transition: all .2s;
+}
+.toggle input:checked + .toggle-track { background: var(--fuel-dim); border-color: var(--fuel); }
+.toggle input:checked ~ .toggle-thumb { left: 23px; background: var(--fuel); }
+
+/* Fuel price row */
+.price-row { display: flex; gap: 8px; align-items: flex-end; }
+.price-row .field { flex: 1; }
+.price-source {
+  background: var(--surface3); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  white-space: nowrap; margin-bottom: 0;
+  cursor: pointer; transition: all .2s;
+}
+.price-source:hover { border-color: var(--border2); color: var(--text2); }
+
+/* Estimate button */
+.estimate-btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--fuel), #C2590E);
+  border: none; border-radius: 12px; cursor: pointer;
+  font-family: var(--sans); font-size: 15px; font-weight: 800;
+  color: #0A0400; letter-spacing: .2px;
+  transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 6px 24px rgba(249,115,22,.3);
+}
+.estimate-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 32px rgba(249,115,22,.4); }
+.estimate-btn:active { transform: scale(.98); }
+.estimate-btn .btn-ico { font-size: 20px; }
+
+/* ── RESULTS PANEL ── */
+.results-panel { display: flex; flex-direction: column; gap: 16px; }
+
+/* Result card */
+.result-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; overflow: hidden;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity .4s ease, transform .4s ease;
+}
+.result-card.visible { opacity: 1; transform: translateY(0); }
+
+.rc-header {
+  padding: 14px 18px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.rch-icon { font-size: 18px; }
+.rch-title { font-size: 13px; font-weight: 700; flex: 1; }
+.rch-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px;
+}
+
+/* Big hero number */
+.hero-number {
+  padding: 24px 20px 16px;
+  display: flex; align-items: flex-end; gap: 8px;
+}
+.hn-val { font-size: 48px; font-weight: 800; font-family: var(--mono); line-height: 1; }
+.hn-unit { font-size: 16px; font-weight: 600; color: var(--text2); padding-bottom: 6px; }
+.hn-sub { font-size: 11px; color: var(--text2); margin-left: auto; text-align: right; font-family: var(--mono); padding-bottom: 8px; line-height: 1.5; }
+
+/* Breakdown rows */
+.breakdown { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 0; }
+.bdr {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: 13px;
+}
+.bdr:last-child { border-bottom: none; }
+.bdr-label { color: var(--text2); display: flex; align-items: center; gap: 7px; }
+.bdr-ico { font-size: 14px; }
+.bdr-val { font-family: var(--mono); font-weight: 700; }
+.bdr-val.fuel { color: var(--fuel); }
+.bdr-val.green { color: var(--green); }
+.bdr-val.amber { color: var(--amber); }
+.bdr-val.red { color: var(--red); }
+.bdr-val.blue { color: var(--blue); }
+.bdr-val.teal { color: var(--teal); }
+
+/* Visual bar */
+.vis-bar-section { padding: 14px 20px 18px; border-top: 1px solid var(--border); }
+.vbs-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.bar-stack { height: 28px; border-radius: 8px; overflow: hidden; display: flex; position: relative; }
+.bar-seg { height: 100%; transition: width .6s cubic-bezier(.4,0,.2,1); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 9px; font-weight: 700; overflow: hidden; white-space: nowrap; }
+.bar-legend { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+.bl-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+.bl-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* Comparison table */
+.compare-table { width: 100%; border-collapse: collapse; }
+.compare-table th {
+  text-align: left; padding: 10px 14px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .8px;
+  border-bottom: 1px solid var(--border);
+}
+.compare-table th:not(:first-child) { text-align: right; }
+.compare-table td {
+  padding: 11px 14px; font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.compare-table td:not(:first-child) { text-align: right; font-family: var(--mono); font-weight: 600; }
+.compare-table tr.highlight td { background: rgba(249,115,22,.04); }
+.compare-table tr.highlight td:first-child { border-left: 2px solid var(--fuel); }
+
+/* Reefer badge */
+.reefer-alert {
+  margin: 0 20px 16px;
+  padding: 12px 14px;
+  background: var(--blue-dim); border: 1px solid rgba(96,165,250,.2);
+  border-radius: 10px; display: flex; gap: 10px; align-items: flex-start;
+  font-size: 12px; color: var(--text2); line-height: 1.55;
+}
+.reefer-alert strong { color: var(--blue); }
+
+/* Empty state */
+.empty-state {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 60px 30px;
+  text-align: center; opacity: .6;
+}
+.es-icon { font-size: 48px; margin-bottom: 14px; display: block; }
+.es-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.es-sub { font-size: 13px; color: var(--text2); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-left: 3px solid var(--fuel); border-radius: 12px;
+  padding: 13px 17px; box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  z-index: 999; transform: translateX(120%); opacity: 0;
+  transition: all .35s; max-width: 280px;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast-title { font-weight: 800; font-size: 13px; color: var(--fuel); margin-bottom: 2px; }
+.toast-body { font-size: 12px; color: var(--text2); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-eyebrow"><div class="eyebrow-dot"></div>TriqLog · طريق لوج</div>
+      <div class="hdr-title">Fuel <span>Estimator</span></div>
+      <div class="hdr-sub">
+        Tests the refactored <code style="font-family:var(--mono);font-size:11px;background:var(--surface);padding:2px 6px;border-radius:4px;color:var(--fuel);">estimateRequiredFuel()</code> logic —
+        consumption by truck type, weight penalty, reefer surcharge, Afriquia rebate split.
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div class="tag fuel">triqlog-fuel.service.ts</div>
+      <div class="tag green">5 test cases</div>
+      <div class="tag">90/10 rebate</div>
+      <div class="tag">Reefer logic</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid">
+
+    <!-- INPUT PANEL -->
+    <div class="input-panel">
+      <div class="panel-header">
+        <div class="panel-icon">⛽</div>
+        <div>
+          <div class="panel-title">Trip Parameters</div>
+          <div class="panel-sub">Remplissez les données du chargement</div>
+        </div>
+      </div>
+      <div class="panel-body">
+
+        <!-- Truck type -->
+        <div class="field">
+          <div class="field-label">Type de camion</div>
+          <div class="truck-grid" id="truckGrid">
+            <div class="truck-card selected" data-type="SEMI_TRAILER" data-rate="35" onclick="selectTruck(this)">
+              <div class="tc-ico">🚛</div>
+              <div class="tc-body"><div class="tc-name">Semi-remorque</div><div class="tc-rate">35 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="CURTAINSIDER" data-rate="32" onclick="selectTruck(this)">
+              <div class="tc-ico">🚚</div>
+              <div class="tc-body"><div class="tc-name">Bâché</div><div class="tc-rate">32 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="REFRIGERATED" data-rate="38" onclick="selectTruck(this)">
+              <div class="tc-ico">🧊</div>
+              <div class="tc-body"><div class="tc-name">Frigorifique</div><div class="tc-rate">38 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="FLATBED" data-rate="30" onclick="selectTruck(this)">
+              <div class="tc-ico">🏗️</div>
+              <div class="tc-body"><div class="tc-name">Plateau</div><div class="tc-rate">30 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="TANKER" data-rate="34" onclick="selectTruck(this)">
+              <div class="tc-ico">🛢️</div>
+              <div class="tc-body"><div class="tc-name">Citerne</div><div class="tc-rate">34 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="BOX_TRUCK" data-rate="22" onclick="selectTruck(this)">
+              <div class="tc-ico">📦</div>
+              <div class="tc-body"><div class="tc-name">Fourgon</div><div class="tc-rate">22 L/100km</div></div>
+            </div>
+            <div class="truck-card" data-type="TIPPER" data-rate="28" onclick="selectTruck(this)">
+              <div class="tc-ico">🏚️</div>
+              <div class="tc-body"><div class="tc-name">Benne</div><div class="tc-rate">28 L/100km</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Distance -->
+        <div class="field">
+          <div class="field-label">
+            Distance (km)
+            <span class="field-hint">A1: Tanger→Casa = 340km</span>
+          </div>
+          <input type="number" id="distance" value="310" min="10" max="2000" step="10" oninput="liveUpdate()">
+        </div>
+
+        <!-- Weight -->
+        <div class="field">
+          <div class="field-label">
+            Poids du chargement (tonnes)
+            <span class="field-hint">Pénalité au-delà de 5T</span>
+          </div>
+          <input type="number" id="weight" value="22" min="0.5" max="40" step="0.5" oninput="liveUpdate()">
+        </div>
+
+        <!-- Fuel price -->
+        <div class="field">
+          <div class="field-label">
+            Prix carburant (MAD/L)
+            <span class="field-hint" id="priceSource">Manuel</span>
+          </div>
+          <div class="price-row">
+            <div class="field">
+              <input type="number" id="fuelPrice" value="12.50" min="8" max="25" step="0.05" oninput="liveUpdate()">
+            </div>
+            <div class="price-source" onclick="fetchLivePrice()" title="Charger prix Afriquia">🔄 Live</div>
+          </div>
+        </div>
+
+        <!-- Afriquia discount -->
+        <div class="field">
+          <div class="field-label">
+            Remise Afriquia négociée (MAD/L)
+            <span class="field-hint">Ex: 0.50 MAD/L</span>
+          </div>
+          <input type="number" id="discount" value="0.50" min="0.10" max="2.00" step="0.05" oninput="liveUpdate()">
+        </div>
+
+        <!-- Reefer toggle -->
+        <div class="field">
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-label">🧊 Compresseur frigorifique</div>
+              <div class="toggle-sub" style="font-size:11px;color:var(--text2);margin-top:3px;">+2.5 L/h de compresseur (actif automatiquement pour type Frigorifique)</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="reeferToggle" onchange="liveUpdate()">
+              <div class="toggle-track"></div>
+              <div class="toggle-thumb"></div>
+            </label>
+          </div>
+        </div>
+
+        <button class="estimate-btn" onclick="runEstimate()">
+          <span class="btn-ico">⛽</span> Calculer l'estimation
+        </button>
+
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results-panel" id="resultsPanel">
+      <div class="empty-state" id="emptyState">
+        <span class="es-icon">⛽</span>
+        <div class="es-title">Estimation prête</div>
+        <div class="es-sub">Configurez les paramètres et cliquez Calculer</div>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- PRESET TEST CASES -->
+  <div style="margin-top:32px;">
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+      <div style="width:5px;height:5px;border-radius:50%;background:var(--fuel);"></div>
+      Cas de test prédéfinis — tirés de vrais corridors marocains
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;" id="presets"></div>
+  </div>
+
+</div><!-- /wrap -->
+
+<div class="toast" id="toast"><div class="toast-title" id="tTitle"></div><div class="toast-body" id="tBody"></div></div>
+
+<script>
+// ── Constants (mirrors triqlog-fuel.service.ts exactly) ──────────────────────
+const BASE_CONSUMPTION = {
+  SEMI_TRAILER:  35,
+  CURTAINSIDER:  32,
+  REFRIGERATED:  38,
+  FLATBED:       30,
+  TANKER:        34,
+  BOX_TRUCK:     22,
+  TIPPER:        28,
+};
+const WEIGHT_PENALTY_PER_TONNE = 0.008;
+const BASE_LOAD_TONNES         = 5;
+const SAFETY_BUFFER            = 1.15;
+const REEFER_SURCHARGE_PER_HR  = 2.5;
+const DRIVER_REBATE_PCT        = 0.90;
+const PLATFORM_REBATE_PCT      = 0.10;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let selectedTruckType = 'SEMI_TRAILER';
+
+const PRESETS = [
+  { label:'Béni Mellal → Casa',  type:'SEMI_TRAILER',  km:310, t:22,  reefer:false, price:12.50, disc:0.50 },
+  { label:'Tanger Med → Casa',   type:'CURTAINSIDER',  km:340, t:23,  reefer:false, price:12.50, disc:0.50 },
+  { label:'Agadir → Marrakech',  type:'REFRIGERATED',  km:260, t:18,  reefer:true,  price:12.50, disc:0.50 },
+  { label:'Fès → Agadir',        type:'SEMI_TRAILER',  km:580, t:28,  reefer:false, price:12.50, disc:0.50 },
+  { label:'Oujda → Casa',        type:'TANKER',        km:530, t:20,  reefer:false, price:12.50, disc:0.50 },
+];
+
+// ── Core estimation (pure JS — mirrors the TS service) ───────────────────────
+function estimate(truckType, distanceKm, weightTonnes, fuelPrice, negotiatedDiscount, requiresReefer) {
+  const r2 = n => Math.round(n * 100) / 100;
+  const r1 = n => Math.round(n * 10) / 10;
+
+  const baseRate         = BASE_CONSUMPTION[truckType] ?? 22;
+  const excessTonnes     = Math.max(0, weightTonnes - BASE_LOAD_TONNES);
+  const weightPenaltyPct = r2(excessTonnes * WEIGHT_PENALTY_PER_TONNE * 100);
+  const weightMultiplier = 1 + excessTonnes * WEIGHT_PENALTY_PER_TONNE;
+  const effectiveRate    = r2(baseRate * weightMultiplier);
+
+  let baseLiters = (distanceKm / 100) * effectiveRate * SAFETY_BUFFER;
+
+  let reeferHours    = null;
+  let reeferLiters   = null;
+  const isReefer     = requiresReefer || truckType === 'REFRIGERATED';
+
+  if (isReefer) {
+    reeferHours  = Math.ceil(distanceKm / 70);
+    reeferLiters = r2(reeferHours * REEFER_SURCHARGE_PER_HR);
+    baseLiters  += reeferLiters;
+  }
+
+  const estimatedLiters   = r1(baseLiters);
+  const grossCostMAD      = r2(estimatedLiters * fuelPrice);
+  const totalDiscount     = r2(estimatedLiters * negotiatedDiscount);
+  const driverSavingMAD   = r2(totalDiscount * DRIVER_REBATE_PCT);
+  const platformCutMAD    = r2(totalDiscount * PLATFORM_REBATE_PCT);
+  const driverNetCostMAD  = r2(grossCostMAD - driverSavingMAD);
+  const effectivePricePerL = r2(driverNetCostMAD / estimatedLiters);
+
+  return {
+    truckType, distanceKm, weightTonnes, fuelPrice, negotiatedDiscount,
+    baseRate, weightPenaltyPct, effectiveRate,
+    estimatedLiters, reeferHours, reeferLiters,
+    grossCostMAD, totalDiscount,
+    driverSavingMAD, platformCutMAD, driverNetCostMAD, effectivePricePerL,
+  };
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const fmt  = n => Number(n).toLocaleString('fr-MA', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmt2 = n => Number(n).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt1 = n => Number(n).toLocaleString('fr-MA', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+let toastTmr = null;
+function toast(title, body) {
+  const e = document.getElementById('toast');
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tBody').textContent  = body;
+  e.classList.add('show');
+  if (toastTmr) clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => e.classList.remove('show'), 4000);
+}
+
+function selectTruck(card) {
+  document.querySelectorAll('.truck-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  selectedTruckType = card.dataset.type;
+  // Auto-check reefer toggle for refrigerated
+  const reeferToggle = document.getElementById('reeferToggle');
+  if (selectedTruckType === 'REFRIGERATED') {
+    reeferToggle.checked = true;
+  }
+  liveUpdate();
+}
+
+function getInputs() {
+  return {
+    truckType:  selectedTruckType,
+    distance:   parseFloat(document.getElementById('distance').value) || 0,
+    weight:     parseFloat(document.getElementById('weight').value)   || 0,
+    fuelPrice:  parseFloat(document.getElementById('fuelPrice').value) || 12.50,
+    discount:   parseFloat(document.getElementById('discount').value)  || 0.50,
+    reefer:     document.getElementById('reeferToggle').checked,
+  };
+}
+
+function liveUpdate() {
+  const inputs = getInputs();
+  if (inputs.distance > 0 && inputs.weight > 0) {
+    renderResults(estimate(
+      inputs.truckType, inputs.distance, inputs.weight,
+      inputs.fuelPrice, inputs.discount, inputs.reefer
+    ));
+  }
+}
+
+function runEstimate() {
+  const inputs = getInputs();
+  if (!inputs.distance || inputs.distance <= 0) { toast('⚠️ Distance manquante', 'Entrez une distance en km'); return; }
+  if (!inputs.weight || inputs.weight <= 0)    { toast('⚠️ Poids manquant', 'Entrez le poids du chargement'); return; }
+  renderResults(estimate(
+    inputs.truckType, inputs.distance, inputs.weight,
+    inputs.fuelPrice, inputs.discount, inputs.reefer
+  ));
+  toast('⛽ Estimation calculée', `${inputs.truckType} · ${inputs.distance}km · ${inputs.weight}T`);
+}
+
+function fetchLivePrice() {
+  // Simulate live price fetch (in production: hit Afriquia/CMH API)
+  const prices = [12.35, 12.50, 12.65, 12.80, 12.45];
+  const price  = prices[Math.floor(Math.random() * prices.length)];
+  document.getElementById('fuelPrice').value = price;
+  document.getElementById('priceSource').textContent = '🟢 Live Afriquia';
+  toast('🔄 Prix mis à jour', `MAD ${price}/L — source: Afriquia CMH`);
+  liveUpdate();
+}
+
+// ── Render results ───────────────────────────────────────────────────────────
+function renderResults(r) {
+  const panel = document.getElementById('resultsPanel');
+  const empty = document.getElementById('emptyState');
+  if (empty) empty.remove();
+
+  const costPct     = Math.round((r.grossCostMAD / (r.grossCostMAD + 1)) * 100); // for bar
+  const savingShare = Math.round((r.driverSavingMAD / r.grossCostMAD) * 100);
+  const netShare    = Math.round((r.driverNetCostMAD / r.grossCostMAD) * 100);
+  const platShare   = Math.round((r.platformCutMAD / r.grossCostMAD) * 100);
+
+  panel.innerHTML = `
+
+    <!-- Card 1: Consumption -->
+    <div class="result-card visible" style="transition-delay:.05s">
+      <div class="rc-header">
+        <span class="rch-icon">📊</span>
+        <span class="rch-title">Consommation estimée</span>
+        <span class="rch-badge" style="background:var(--fuel-dim);color:var(--fuel);">
+          ${r.truckType.replace('_',' ')}
+        </span>
+      </div>
+      <div class="hero-number">
+        <div class="hn-val" style="color:var(--fuel);">${fmt1(r.estimatedLiters)}</div>
+        <div class="hn-unit">litres</div>
+        <div class="hn-sub">
+          ${r.baseRate}L/100km base<br>
+          +${r.weightPenaltyPct}% pénalité poids<br>
+          ×1.15 marge sécurité
+        </div>
+      </div>
+      ${r.reeferLiters ? `
+      <div class="reefer-alert">
+        <span style="font-size:18px;flex-shrink:0;">🧊</span>
+        <div><strong>Compresseur frigorifique</strong> — ${r.reeferHours}h de trajet × 2.5 L/h = <strong>${r.reeferLiters}L supplémentaires</strong> inclus dans l'estimation.</div>
+      </div>` : ''}
+      <div class="breakdown">
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">📏</span>Distance</div>
+          <div class="bdr-val blue">${fmt(r.distanceKm)} km</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">🏋️</span>Poids chargement</div>
+          <div class="bdr-val blue">${r.weightTonnes} T</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">📈</span>Taux effectif (après pénalité)</div>
+          <div class="bdr-val fuel">${r.effectiveRate} L/100km</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">⚖️</span>Tonnes au-dessus de 5T</div>
+          <div class="bdr-val amber">${Math.max(0, r.weightTonnes - 5).toFixed(1)} T (+${r.weightPenaltyPct}%)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Cost breakdown -->
+    <div class="result-card visible" style="transition-delay:.12s">
+      <div class="rc-header">
+        <span class="rch-icon">💰</span>
+        <span class="rch-title">Coût carburant & remise Afriquia</span>
+        <span class="rch-badge" style="background:var(--green-dim);color:var(--green);">
+          −MAD ${fmt2(r.driverSavingMAD)} économisé
+        </span>
+      </div>
+      <div class="hero-number">
+        <div class="hn-val" style="color:var(--green);">${fmt2(r.driverNetCostMAD)}</div>
+        <div class="hn-unit">MAD net</div>
+        <div class="hn-sub">
+          ${fmt2(r.effectivePricePerL)} MAD/L effectif<br>
+          vs ${fmt2(r.fuelPrice)} MAD/L pompe
+        </div>
+      </div>
+      <div class="breakdown">
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">⛽</span>Coût brut (${fmt2(r.fuelPrice)} MAD/L)</div>
+          <div class="bdr-val amber">MAD ${fmt2(r.grossCostMAD)}</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">🤝</span>Remise Afriquia totale (${fmt2(r.negotiatedDiscount)} MAD/L)</div>
+          <div class="bdr-val teal">−MAD ${fmt2(r.totalDiscount)}</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">👨‍💼</span>Part chauffeur (90% de la remise)</div>
+          <div class="bdr-val green">−MAD ${fmt2(r.driverSavingMAD)}</div>
+        </div>
+        <div class="bdr">
+          <div class="bdr-label"><span class="bdr-ico">💼</span>Part TriqLog (10% de la remise)</div>
+          <div class="bdr-val" style="color:var(--fuel);">MAD ${fmt2(r.platformCutMAD)}</div>
+        </div>
+        <div class="bdr" style="padding-top:12px;">
+          <div class="bdr-label" style="font-weight:700;color:var(--text);">Net à payer (chauffeur)</div>
+          <div class="bdr-val green" style="font-size:16px;">MAD ${fmt2(r.driverNetCostMAD)}</div>
+        </div>
+      </div>
+
+      <!-- Cost bar -->
+      <div class="vis-bar-section">
+        <div class="vbs-label">Répartition du coût brut</div>
+        <div class="bar-stack">
+          <div class="bar-seg" style="width:${netShare}%;background:var(--green);color:#021008;">Net</div>
+          <div class="bar-seg" style="width:${savingShare}%;background:var(--teal);color:#021414;">Remise</div>
+          <div class="bar-seg" style="width:${platShare}%;background:var(--fuel);color:#0A0400;">TriqLog</div>
+        </div>
+        <div class="bar-legend">
+          <div class="bl-item"><div class="bl-dot" style="background:var(--green)"></div>Coût net chauffeur (${netShare}%)</div>
+          <div class="bl-item"><div class="bl-dot" style="background:var(--teal)"></div>Économie chauffeur (${savingShare}%)</div>
+          <div class="bl-item"><div class="bl-dot" style="background:var(--fuel)"></div>Revenue TriqLog (${platShare}%)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: All truck types comparison -->
+    <div class="result-card visible" style="transition-delay:.2s">
+      <div class="rc-header">
+        <span class="rch-icon">🔄</span>
+        <span class="rch-title">Comparaison tous types de camion</span>
+        <span class="rch-badge" style="background:var(--surface3);color:var(--text2);">
+          ${fmt(r.distanceKm)} km · ${r.weightTonnes}T
+        </span>
+      </div>
+      <div style="padding:0 0 4px;">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Litres</th>
+              <th>Brut MAD</th>
+              <th>Net MAD</th>
+              <th>TriqLog MAD</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.entries(BASE_CONSUMPTION).map(([type, rate]) => {
+              const res = estimate(type, r.distanceKm, r.weightTonnes, r.fuelPrice, r.negotiatedDiscount, type === 'REFRIGERATED');
+              const isSelected = type === r.truckType;
+              return `<tr class="${isSelected ? 'highlight' : ''}">
+                <td style="color:${isSelected?'var(--fuel)':'var(--text2)'}">
+                  ${isSelected ? '→ ' : ''}<strong>${type.replace('_',' ')}</strong>
+                </td>
+                <td style="color:${isSelected?'var(--fuel)':'var(--text2)'}">${fmt1(res.estimatedLiters)}L</td>
+                <td>${fmt(res.grossCostMAD)}</td>
+                <td style="color:var(--green)">${fmt(res.driverNetCostMAD)}</td>
+                <td style="color:var(--fuel)">${fmt2(res.platformCutMAD)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ── Presets ───────────────────────────────────────────────────────────────────
+function buildPresets() {
+  const container = document.getElementById('presets');
+  container.innerHTML = PRESETS.map((p, i) => `
+    <div onclick="loadPreset(${i})" style="
+      background:var(--surface);border:1px solid var(--border);border-radius:12px;
+      padding:14px;cursor:pointer;transition:all .2s;
+    " onmouseover="this.style.borderColor='var(--fuel)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:11px;font-weight:800;color:var(--fuel);font-family:var(--mono);margin-bottom:5px;">
+        TEST ${i + 1}
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${p.label}</div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);line-height:1.6;">
+        ${p.type.replace('_',' ')} · ${p.km}km · ${p.t}T${p.reefer ? ' · ❄️ Reefer' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadPreset(i) {
+  const p = PRESETS[i];
+  document.getElementById('distance').value  = p.km;
+  document.getElementById('weight').value    = p.t;
+  document.getElementById('fuelPrice').value = p.price;
+  document.getElementById('discount').value  = p.disc;
+  document.getElementById('reeferToggle').checked = p.reefer;
+
+  // Select truck card
+  document.querySelectorAll('.truck-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.type === p.type);
+  });
+  selectedTruckType = p.type;
+
+  runEstimate();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildPresets();
+liveUpdate();
+</script>
+</body>
+</html>

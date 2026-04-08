@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TriqLog — Complete App Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   ROOT TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --bg:#09090F;
+  --bg2:#0F1018;
+  --bg3:#141520;
+  --surface:#1A1C2A;
+  --surface2:#21253A;
+  --surface3:#282D44;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --border3:rgba(255,255,255,0.18);
+
+  --amber:#F0B429;
+  --amber2:#FFD166;
+  --amber-dim:rgba(240,180,41,0.13);
+  --amber-glow:rgba(240,180,41,0.06);
+  --green:#22C55E;
+  --green2:#4ADE80;
+  --green-dim:rgba(34,197,94,0.12);
+  --red:#EF4444;
+  --red-dim:rgba(239,68,68,0.11);
+  --blue:#60A5FA;
+  --blue-dim:rgba(96,165,250,0.1);
+  --purple:#C084FC;
+  --purple-dim:rgba(192,132,252,0.1);
+  --teal:#2DD4BF;
+  --teal-dim:rgba(45,212,191,0.1);
+
+  --text:#F0F2FA;
+  --text2:#8B93B0;
+  --text3:#4A5270;
+  --text4:#2E3350;
+
+  --r:16px;
+  --r-sm:10px;
+  --shadow:0 8px 32px rgba(0,0,0,0.6);
+  --shadow-lg:0 20px 60px rgba(0,0,0,0.7);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* subtle grid bg */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(96,165,250,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(96,165,250,0.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+
+.wrapper{position:relative;z-index:1;}
+
+/* ═══════════════════════════════════════════
+   HERO HEADER
+═══════════════════════════════════════════ */
+.hero{
+  text-align:center;padding:60px 24px 40px;
+  background:linear-gradient(180deg,rgba(240,180,41,0.04) 0%,transparent 100%);
+  border-bottom:1px solid var(--border);
+}
+.hero-logo{display:inline-flex;align-items:center;gap:14px;margin-bottom:24px;}
+.hero-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--amber),#C07A10);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 24px rgba(240,180,41,0.35);}
+.hero-name{font-size:32px;font-weight:900;letter-spacing:-1px;}
+.hero-name span{color:var(--amber);}
+.hero-arabic{font-family:'Noto Sans Arabic',sans-serif;font-size:13px;color:var(--text3);display:block;margin-top:2px;}
+.hero-tagline{font-size:18px;font-weight:700;color:var(--text2);margin-bottom:10px;}
+.hero-desc{font-size:14px;color:var(--text3);max-width:560px;margin:0 auto 24px;line-height:1.6;}
+.hero-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}
+.hero-pill{background:var(--surface);border:1px solid var(--border2);border-radius:100px;padding:5px 16px;font-size:12px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace;}
+.hero-pill.amber{background:var(--amber-dim);border-color:rgba(240,180,41,0.3);color:var(--amber);}
+.hero-pill.green{background:var(--green-dim);border-color:rgba(34,197,94,0.25);color:var(--green);}
+
+/* ═══════════════════════════════════════════
+   SECTION LABELS
+═══════════════════════════════════════════ */
+.section-wrap{padding:48px 32px;}
+.section-head{text-align:center;margin-bottom:40px;}
+.section-kicker{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--amber);font-family:'IBM Plex Mono',monospace;margin-bottom:10px;}
+.section-title{font-size:28px;font-weight:900;margin-bottom:8px;letter-spacing:-0.5px;}
+.section-sub{font-size:14px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.6;}
+
+/* ═══════════════════════════════════════════
+   PHONE GRID — side by side phones
+═══════════════════════════════════════════ */
+.phone-grid{
+  display:flex;gap:24px;justify-content:center;flex-wrap:wrap;
+  padding:0 24px 48px;
+}
+.phone-col{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.phone-label{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.phone-label.gold{color:var(--amber);}
+.phone-label.green{color:var(--green);}
+
+/* Phone shell */
+.phone{
+  width:320px;
+  background:var(--bg2);
+  border-radius:36px;
+  overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,0.7),inset 0 0 0 1px rgba(255,255,255,0.08),inset 0 1px 0 rgba(255,255,255,0.12);
+  position:relative;
+  flex-shrink:0;
+}
+.phone.tall{} /* default */
+
+/* Phone status bar */
+.phone-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 20px 6px;
+  font-size:11px;font-weight:700;
+  background:var(--bg2);
+  position:sticky;top:0;z-index:10;
+}
+.pb-time{font-size:13px;font-weight:800;}
+.pb-icons{display:flex;gap:4px;align-items:center;font-size:11px;}
+
+/* Phone content */
+.phone-content{
+  overflow-y:auto;
+  scrollbar-width:none;
+  max-height:620px;
+  padding-bottom:72px;
+}
+.phone-content::-webkit-scrollbar{display:none;}
+
+/* Bottom nav */
+.phone-nav{
+  position:absolute;bottom:0;left:0;right:0;height:70px;
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 4px 14px;
+}
+.pnav-tab{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 2px;cursor:pointer;border:none;background:none;border-radius:10px;
+}
+.pnav-ico{font-size:20px;}
+.pnav-lbl{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.2px;}
+.pnav-tab.active .pnav-lbl{color:var(--amber);}
+.pnav-badge{
+  position:absolute;top:4px;right:calc(50% - 18px);
+  width:14px;height:14px;border-radius:50%;
+  background:var(--red);color:#fff;font-size:8px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--bg2);
+}
+
+/* ═══════════════════════════════════════════
+   REUSABLE MICRO-COMPONENTS
+═══════════════════════════════════════════ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.card-p{padding:16px;}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.tag-amber{background:var(--amber-dim);color:var(--amber);}
+.tag-green{background:var(--green-dim);color:var(--green);}
+.tag-red{background:var(--red-dim);color:var(--red);}
+.tag-blue{background:var(--blue-dim);color:var(--blue);}
+.tag-grey{background:rgba(255,255,255,0.06);color:var(--text3);}
+.tag-gold-border{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,180,41,0.3);}
+
+/* Stat strip */
+.stat-strip{display:flex;}
+.stat-cell{flex:1;text-align:center;padding:12px 6px;border-right:1px solid var(--border);}
+.stat-cell:last-child{border-right:none;}
+.stat-val{font-size:17px;font-weight:800;}
+.stat-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;}
+
+/* Section header inside phone */
+.ph-section{padding:14px 16px 8px;display:flex;justify-content:space-between;align-items:center;}
+.ph-section-title{font-size:13px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;font-family:'IBM Plex Mono',monospace;}
+.ph-section-link{font-size:12px;font-weight:700;color:var(--amber);}
+
+/* Row items */
+.row-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.row-item:last-child{border-bottom:none;}
+.row-item:active{background:rgba(255,255,255,0.03);}
+.ri-icon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.ri-body{flex:1;min-width:0;}
+.ri-name{font-size:13px;font-weight:700;}
+.ri-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.ri-right{text-align:right;}
+.ri-amount{font-size:14px;font-weight:800;}
+.ri-time{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+
+/* ═══════════════════════════════════════════
+   SCREEN 1 — DRIVER HOME
+═══════════════════════════════════════════ */
+.drv-hero{
+  margin:12px;background:linear-gradient(135deg,#151A08,#1E2510);
+  border:1px solid rgba(240,180,41,0.25);border-radius:var(--r);padding:18px;
+  position:relative;overflow:hidden;
+}
+.drv-hero::before{content:'🚛';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:44px;opacity:0.1;}
+.drv-tier{display:inline-flex;align-items:center;gap:5px;background:var(--amber-dim);border:1px solid rgba(240,180,41,0.3);border-radius:100px;padding:3px 12px;font-size:9px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace;margin-bottom:8px;}
+.drv-name{font-size:18px;font-weight:900;margin-bottom:3px;}
+.drv-sub{font-size:11px;color:var(--text3);}
+
+/* GPS map mini */
+.gps-mini{
+  margin:0 12px 10px;
+  background:linear-gradient(180deg,#111A28,#0D1420);
+  border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;
+}
+.gps-map{height:140px;position:relative;overflow:hidden;}
+.gps-map svg{width:100%;height:100%;position:absolute;inset:0;}
+.gps-pin{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:28px;height:28px;background:var(--amber);border-radius:50% 50% 50% 0;
+  transform:translate(-50%,-50%) rotate(-45deg);
+  box-shadow:0 0 16px rgba(240,180,41,0.6);
+  animation:gpsPulse 2s ease-in-out infinite;
+}
+.gps-pin::after{content:'🚛';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:rotate(45deg);font-size:12px;}
+@keyframes gpsPulse{0%,100%{box-shadow:0 0 16px rgba(240,180,41,0.5);}50%{box-shadow:0 0 24px rgba(240,180,41,0.9),0 0 0 6px rgba(240,180,41,0.12);}}
+.gps-bar{display:flex;padding:10px 14px;gap:0;border-top:1px solid var(--border);}
+.gps-stat{flex:1;text-align:center;border-right:1px solid var(--border);}
+.gps-stat:last-child{border-right:none;}
+.gps-val{font-size:15px;font-weight:800;color:var(--amber);}
+.gps-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:1px;}
+.gps-live{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(34,197,94,0.06);border-top:1px solid rgba(34,197,94,0.12);}
+.gps-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.gps-live-txt{font-size:10px;font-weight:700;color:var(--green);}
+.gps-coords{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-left:auto;}
+
+/* Payment 50/50 widget */
+.pay-widget{
+  margin:0 12px 10px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);overflow:hidden;
+}
+.pay-header{padding:12px 14px 0;display:flex;justify-content:space-between;align-items:center;}
+.pay-title{font-size:12px;font-weight:800;}
+.pay-fee{background:var(--amber-dim);color:var(--amber);border-radius:100px;padding:2px 9px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.pay-halves{display:flex;gap:8px;padding:10px 14px 12px;}
+.pay-half{flex:1;border-radius:10px;padding:12px;}
+.pay-half.up{background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.18);}
+.pay-half.del{background:rgba(240,180,41,0.06);border:1px solid rgba(240,180,41,0.18);}
+.ph-lbl{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:5px;}
+.ph-lbl.g{color:var(--green);}
+.ph-lbl.a{color:var(--amber);}
+.ph-amount{font-size:16px;font-weight:900;}
+.ph-amount.g{color:var(--green);}
+.ph-amount.a{color:var(--amber);}
+.ph-when{font-size:10px;color:var(--text3);margin-top:3px;}
+.ph-status{display:inline-flex;align-items:center;gap:3px;margin-top:5px;border-radius:100px;padding:2px 8px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.ph-status.paid{background:var(--green-dim);color:var(--green);}
+.ph-status.wait{background:var(--amber-dim);color:var(--amber);}
+
+/* Load cards */
+.load-card{
+  margin:0 12px 8px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);
+  padding:14px;cursor:pointer;transition:border-color .2s;
+  position:relative;overflow:hidden;
+}
+.load-card:active{border-color:var(--amber);}
+.load-card.locked{opacity:0.5;}
+.load-card.locked::after{content:'⭐ Premium';position:absolute;top:10px;right:10px;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,180,41,0.3);border-radius:100px;padding:2px 9px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.lc-route{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.lc-city{font-size:14px;font-weight:800;}
+.lc-arrow{color:var(--amber);font-size:14px;}
+.lc-price{font-size:16px;font-weight:900;color:var(--amber);}
+.lc-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.lc-chip{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:100px;padding:2px 8px;font-size:10px;color:var(--text2);}
+.lc-paysplit{display:flex;justify-content:space-between;background:rgba(255,255,255,0.03);border-radius:6px;padding:6px 10px;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.lc-ps-val{font-weight:700;}
+.lc-ps-val.g{color:var(--green);}
+.lc-ps-val.a{color:var(--amber);}
+
+/* ═══════════════════════════════════════════
+   SCREEN 2 — DOCUMENTS
+═══════════════════════════════════════════ */
+.doc-item{
+  margin:0 12px 8px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;
+}
+.doc-row{display:flex;align-items:center;gap:12px;padding:14px;}
+.doc-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.doc-ico.ok{background:var(--green-dim);}
+.doc-ico.pend{background:var(--amber-dim);}
+.doc-ico.miss{background:var(--red-dim);}
+.doc-ico.opt{background:rgba(255,255,255,0.05);}
+.doc-body{flex:1;}
+.doc-name{font-size:13px;font-weight:700;}
+.doc-status{font-size:11px;margin-top:2px;}
+.doc-status.ok{color:var(--green);}
+.doc-status.pend{color:var(--amber);}
+.doc-status.miss{color:var(--red);}
+.doc-status.opt{color:var(--text3);}
+.doc-btns{display:flex;gap:6px;padding:0 14px 12px;}
+.doc-btn{flex:1;border:none;border-radius:8px;padding:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;}
+.doc-btn.upload{background:var(--amber);color:#0A0700;}
+.doc-btn.skip{background:var(--surface2);color:var(--text3);border:1px solid var(--border2);}
+.doc-btn.help{background:var(--blue-dim);color:var(--blue);}
+.doc-btn.view{background:var(--green-dim);color:var(--green);}
+
+/* ═══════════════════════════════════════════
+   SCREEN 3 — FORMALIZE ME WIZARD
+═══════════════════════════════════════════ */
+.wiz-hero{text-align:center;padding:20px 16px 16px;}
+.wiz-emoji{font-size:44px;display:block;margin-bottom:12px;animation:bob 2.5s ease-in-out infinite;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.wiz-title{font-size:18px;font-weight:900;margin-bottom:6px;}
+.wiz-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+
+.choice-card{
+  margin:0 12px 8px;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:var(--r);
+  padding:14px;cursor:pointer;display:flex;align-items:center;gap:12px;
+  transition:all .2s;
+}
+.choice-card.sel{border-color:var(--amber);background:var(--amber-glow);}
+.cc-ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.cc-body{flex:1;}
+.cc-name{font-size:13px;font-weight:700;}
+.cc-sub{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4;}
+.cc-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:800;}
+.choice-card.sel .cc-check{background:var(--amber);border-color:var(--amber);color:#0A0600;}
+
+/* AE progress steps */
+.ae-track{padding:0 14px;}
+.ae-node{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+.ae-node:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border);}
+.ae-node.done:not(:last-child)::before{background:var(--green);}
+.ae-node.active:not(:last-child)::before{background:linear-gradient(180deg,var(--amber),var(--border));}
+.ae-circle{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:2px solid var(--border2);background:var(--surface);z-index:1;}
+.ae-node.done .ae-circle{background:var(--green);border-color:var(--green);font-size:11px;}
+.ae-node.active .ae-circle{background:var(--amber);border-color:var(--amber);color:#0A0600;box-shadow:0 0 12px rgba(240,180,41,0.4);}
+.ae-txt{padding-top:3px;}
+.ae-title{font-size:12px;font-weight:800;}
+.ae-sub{font-size:10px;color:var(--text3);margin-top:2px;line-height:1.4;}
+.ae-time{font-size:9px;font-family:'IBM Plex Mono',monospace;margin-top:4px;}
+.ae-node.done .ae-time{color:var(--green);}
+.ae-node.active .ae-time{color:var(--amber);}
+.ae-node .ae-time{color:var(--text3);}
+
+/* Cost breakdown */
+.cost-rows{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin:0 12px 10px;overflow:hidden;}
+.cost-row{display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;}
+.cost-row:last-child{border-bottom:none;}
+.cost-label{color:var(--text2);}
+.cost-val{font-weight:700;}
+.cost-val.g{color:var(--green);}
+.cost-total-row{display:flex;justify-content:space-between;padding:12px 14px;background:var(--amber-glow);border-top:1px solid rgba(240,180,41,0.15);font-weight:900;font-size:14px;}
+.cost-total-row .cost-val{color:var(--amber);font-size:15px;}
+
+/* Sig pad */
+.sig-area{margin:0 12px 10px;background:var(--surface);border:1.5px dashed var(--border2);border-radius:var(--r);height:100px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;}
+.sig-text{font-size:12px;color:var(--text3);}
+
+/* ═══════════════════════════════════════════
+   SCREEN 4 — WALLET / PAYMENTS
+═══════════════════════════════════════════ */
+.wallet-hero{
+  margin:12px;background:linear-gradient(135deg,#0C1A0C,#111908);
+  border:1px solid rgba(34,197,94,0.2);border-radius:var(--r);padding:18px;
+  position:relative;overflow:hidden;
+}
+.wallet-hero::before{content:'🇲🇦';position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:44px;opacity:0.08;}
+.wh-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+.wh-amount{font-size:32px;font-weight:900;color:var(--green);}
+.wh-pending{font-size:11px;color:var(--text2);margin-top:4px;}
+.wh-pending span{color:var(--amber);font-weight:700;}
+
+.pmethod-row{display:flex;gap:8px;padding:0 12px 12px;overflow-x:auto;scrollbar-width:none;}
+.pmethod-row::-webkit-scrollbar{display:none;}
+.pm-card{flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:100px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.pm-card.active{border-color:var(--amber);background:var(--amber-glow);}
+.pm-ico{font-size:22px;margin-bottom:4px;}
+.pm-name{font-size:10px;font-weight:700;}
+.pm-sub{font-size:9px;color:var(--text3);margin-top:2px;}
+
+.tx-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.tx-item:last-child{border-bottom:none;}
+.tx-ico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.tx-ico.cr{background:var(--green-dim);}
+.tx-ico.db{background:var(--red-dim);}
+.tx-ico.pe{background:var(--amber-dim);}
+.tx-body{flex:1;}
+.tx-name{font-size:12px;font-weight:700;}
+.tx-sub{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.tx-amt{font-size:13px;font-weight:800;}
+.tx-amt.g{color:var(--green);}
+.tx-amt.r{color:var(--red);}
+.tx-amt.a{color:var(--amber);}
+
+/* ═══════════════════════════════════════════
+   SCREEN 5 — OPERATOR/SHIPPER DASHBOARD
+═══════════════════════════════════════════ */
+/* This uses a wider phone — the "web app" on tablet / big phone */
+.op-phone{width:360px;}
+
+.op-hero{
+  margin:12px;
+  background:linear-gradient(135deg,#0E0A1A,#150E24);
+  border:1px solid rgba(192,132,252,0.2);border-radius:var(--r);padding:16px;
+}
+.op-greeting{font-size:16px;font-weight:900;margin-bottom:12px;}
+.op-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.op-stat{background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;}
+.op-stat-val{font-size:20px;font-weight:900;}
+.op-stat-lbl{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:3px;}
+.op-stat-delta{font-size:10px;font-weight:700;margin-top:4px;}
+.op-stat-delta.up{color:var(--green);}
+.op-stat-delta.down{color:var(--red);}
+
+/* Mini map */
+.op-map{
+  margin:0 12px 10px;height:160px;
+  background:linear-gradient(180deg,#0F1520,#0A1018);
+  border:1px solid var(--border);border-radius:var(--r);
+  position:relative;overflow:hidden;
+}
+.op-map svg{position:absolute;inset:0;width:100%;height:100%;}
+.map-dot{position:absolute;border-radius:50%;border:2px solid rgba(255,255,255,0.6);animation:mapPulse 2s ease-in-out infinite;}
+@keyframes mapPulse{0%,100%{box-shadow:0 0 6px currentColor;}50%{box-shadow:0 0 12px currentColor,0 0 0 4px rgba(255,255,255,0.08);}}
+.map-dot.active{background:var(--green);color:var(--green);width:10px;height:10px;}
+.map-dot.idle{background:var(--amber);color:var(--amber);width:9px;height:9px;}
+.map-dot.seek{background:var(--red);color:var(--red);width:8px;height:8px;}
+.map-city{position:absolute;font-size:9px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.4);padding:1px 5px;border-radius:3px;white-space:nowrap;}
+.map-legend{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);border-radius:6px;padding:6px 8px;display:flex;gap:8px;}
+.ml-item{display:flex;align-items:center;gap:4px;font-size:9px;color:rgba(255,255,255,0.5);font-family:'IBM Plex Mono',monospace;}
+.ml-dot{width:6px;height:6px;border-radius:50%;}
+
+/* Activity feed */
+.feed-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;}
+.feed-item:last-child{border-bottom:none;}
+.feed-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.feed-body{flex:1;}
+.feed-name{font-size:12px;font-weight:700;}
+.feed-detail{font-size:10px;color:var(--text3);margin-top:1px;font-family:'IBM Plex Mono',monospace;}
+.feed-time{font-size:9px;color:var(--text3);flex-shrink:0;font-family:'IBM Plex Mono',monospace;}
+
+/* Post load form */
+.form-input-mini{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:9px 12px;font-family:'Outfit',sans-serif;
+  font-size:12px;color:var(--text);outline:none;
+}
+.form-input-mini:focus{border-color:var(--amber);}
+.form-group-mini{margin-bottom:10px;}
+.form-label-mini{font-size:10px;font-weight:700;color:var(--text3);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:0.5px;font-family:'IBM Plex Mono',monospace;}
+.form-row-mini{display:flex;gap:8px;}
+
+/* Price estimator */
+.price-est{background:var(--surface2);border:1px solid rgba(240,180,41,0.2);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.pe-label{font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;}
+.pe-amount{font-size:22px;font-weight:900;color:var(--amber);}
+.pe-bar{height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-top:8px;}
+.pe-fill{height:100%;width:62%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:3px;}
+
+/* Quote cards */
+.quote-card{
+  margin:0 12px 8px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r);padding:14px;
+  cursor:pointer;transition:border-color .2s;
+}
+.quote-card.best{border-color:rgba(240,180,41,0.35);background:var(--amber-glow);}
+.qc-driver{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.qc-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--amber),#9A5A08);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.qc-name{font-size:13px;font-weight:800;}
+.qc-meta{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.qc-price{font-size:20px;font-weight:900;color:var(--amber);margin-bottom:5px;}
+.qc-stars{color:var(--amber);font-size:11px;margin-bottom:8px;}
+.qc-tags{display:flex;gap:5px;flex-wrap:wrap;}
+
+/* E-invoice table */
+.inv-table{width:100%;border-collapse:collapse;font-size:11px;}
+.inv-table th{padding:8px 12px;text-align:left;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;font-family:'IBM Plex Mono',monospace;border-bottom:1px solid var(--border);font-size:9px;}
+.inv-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.inv-table tr:last-child td{border-bottom:none;}
+.inv-table tr:hover td{background:rgba(255,255,255,0.02);}
+.inv-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--amber);}
+
+/* ═══════════════════════════════════════════
+   PREMIUM SUCCESS
+═══════════════════════════════════════════ */
+.premium-success{
+  margin:12px;text-align:center;
+  background:linear-gradient(135deg,#1A1504,#201C05);
+  border:1px solid rgba(240,180,41,0.3);border-radius:var(--r);padding:22px;
+  position:relative;overflow:hidden;
+}
+.ps-glow{position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:200px;height:200px;background:radial-gradient(circle,rgba(240,180,41,0.12) 0%,transparent 70%);}
+.ps-emoji{font-size:48px;display:block;margin-bottom:12px;}
+.ps-title{font-size:20px;font-weight:900;color:var(--amber);margin-bottom:6px;}
+.ps-sub{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:14px;}
+.ps-perks{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;}
+.ps-perk{background:var(--amber-dim);border:1px solid rgba(240,180,41,0.25);color:var(--amber);border-radius:8px;padding:4px 10px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+
+/* ═══════════════════════════════════════════
+   CALL TO ACTION BUTTONS
+═══════════════════════════════════════════ */
+.cta-btn{
+  display:block;width:calc(100% - 24px);margin:0 12px 8px;
+  background:linear-gradient(135deg,var(--amber),#C07A10);
+  color:#0A0600;border:none;border-radius:12px;padding:13px;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:900;
+  cursor:pointer;text-align:center;
+  box-shadow:0 4px 16px rgba(240,180,41,0.25);
+}
+.cta-btn-green{
+  display:block;width:calc(100% - 24px);margin:0 12px 8px;
+  background:linear-gradient(135deg,var(--green),#16A34A);
+  color:#021008;border:none;border-radius:12px;padding:13px;
+  font-family:'Outfit',sans-serif;font-size:14px;font-weight:900;
+  cursor:pointer;text-align:center;
+}
+
+/* ═══════════════════════════════════════════
+   PLATFORM DIVIDER
+═══════════════════════════════════════════ */
+.platform-divider{
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  padding:20px 32px;
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,transparent,rgba(240,180,41,0.03),transparent);
+}
+.pd-label{font-size:11px;font-weight:800;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+.pd-line{flex:1;height:1px;background:var(--border);}
+
+/* ═══════════════════════════════════════════
+   FLOW DIAGRAM
+═══════════════════════════════════════════ */
+.flow-section{padding:48px 32px;background:linear-gradient(180deg,transparent,rgba(240,180,41,0.02),transparent);}
+.flow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;max-width:900px;margin:0 auto;}
+.flow-node{text-align:center;padding:24px 16px;position:relative;}
+.flow-node:not(:last-child)::after{content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:20px;color:var(--text3);}
+@media(max-width:600px){.flow-node:not(:last-child)::after{display:none;}}
+.fn-icon{width:56px;height:56px;border-radius:16px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:26px;}
+.fn-title{font-size:14px;font-weight:800;margin-bottom:5px;}
+.fn-desc{font-size:12px;color:var(--text2);line-height:1.5;}
+.fn-tag{display:inline-block;margin-top:8px;}
+
+/* ═══════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════ */
+.footer{
+  text-align:center;padding:40px 24px;
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+}
+.footer-logo{font-size:22px;font-weight:900;margin-bottom:8px;}
+.footer-logo span{color:var(--amber);}
+.footer-arabic{font-family:'Noto Sans Arabic',sans-serif;color:var(--text3);font-size:13px;margin-bottom:16px;}
+.footer-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:20px;}
+.footer-note{font-size:12px;color:var(--text3);max-width:420px;margin:0 auto;line-height:1.6;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:2px;}
+
+/* Responsive */
+@media(max-width:800px){.phone{width:280px;}.op-phone{width:300px;}}
+@media(max-width:600px){.phone{width:100%;max-width:360px;}.op-phone{width:100%;max-width:360px;}}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-logo">
+    <div class="hero-icon">🚛</div>
+    <div>
+      <div class="hero-name">Shahi<span>Log</span></div>
+      <div class="hero-arabic">طريق لوج · المغرب الرقمي</div>
+    </div>
+  </div>
+  <div class="hero-tagline">Morocco's Digital Freight Platform</div>
+  <div class="hero-desc">Connecting independent truckers to shippers across Morocco — with GPS tracking, 50/50 split payments, e-invoicing, and a built-in formalization engine for the informal economy.</div>
+  <div class="hero-pills">
+    <div class="hero-pill amber">Tanger Med → Casablanca</div>
+    <div class="hero-pill green">GPS 50% + 50% Payments</div>
+    <div class="hero-pill">Auto-Entrepreneur Registration</div>
+    <div class="hero-pill">DGI E-Invoice 2026</div>
+    <div class="hero-pill amber">Wafacash · CIH · Agent Cash</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DRIVER SIDE
+═══════════════════════════════════════════ -->
+<div class="section-wrap">
+  <div class="section-head">
+    <div class="section-kicker">Côté Chauffeur</div>
+    <div class="section-title">L'app du chauffeur</div>
+    <div class="section-sub">Designed for Android — no bank account required. GPS tracking unlocks the second payment automatically.</div>
+  </div>
+
+  <div class="phone-grid">
+
+    <!-- PHONE 1: Home + GPS + Trip -->
+    <div class="phone-col">
+      <div class="phone-label green">🏠 Accueil · Voyage actif</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>●●●●</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <!-- driver hero -->
+          <div class="drv-hero">
+            <div class="drv-tier">⭐ Conducteur Premium</div>
+            <div class="drv-name">Mustapha Benali 🧔</div>
+            <div class="drv-sub">Béni Mellal · Camion 26T · 4.8 ⭐ · 47 voyages</div>
+          </div>
+
+          <!-- GPS -->
+          <div class="gps-mini">
+            <div class="gps-map">
+              <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg">
+                <rect width="320" height="140" fill="#0D1520"/>
+                <!-- grid -->
+                <g stroke="rgba(96,165,250,0.06)" stroke-width="1">
+                  <line x1="0" y1="28" x2="320" y2="28"/><line x1="0" y1="56" x2="320" y2="56"/>
+                  <line x1="0" y1="84" x2="320" y2="84"/><line x1="0" y1="112" x2="320" y2="112"/>
+                  <line x1="64" y1="0" x2="64" y2="140"/><line x1="128" y1="0" x2="128" y2="140"/>
+                  <line x1="192" y1="0" x2="192" y2="140"/><line x1="256" y1="0" x2="256" y2="140"/>
+                </g>
+                <!-- route -->
+                <path d="M70 110 Q120 80 160 70 Q210 60 260 35" stroke="none" fill="none"/>
+                <path d="M70 110 Q120 80 160 70 Q210 60 260 35" stroke="rgba(240,180,41,0.2)" stroke-width="14" fill="none" stroke-linecap="round"/>
+                <path d="M70 110 Q120 80 160 70 Q210 60 260 35" stroke="#F0B429" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="7 4"/>
+                <!-- cities -->
+                <circle cx="70" cy="110" r="4" fill="#22C55E" opacity="0.8"/>
+                <circle cx="260" cy="35" r="4" fill="#EF4444" opacity="0.8"/>
+                <!-- truck position -->
+                <circle cx="160" cy="70" r="12" fill="rgba(240,180,41,0.15)"/>
+                <circle cx="160" cy="70" r="6" fill="#F0B429"/>
+              </svg>
+              <div class="map-city" style="left:8px;bottom:12px;">Béni Mellal</div>
+              <div class="map-city" style="right:8px;top:8px;">Casablanca</div>
+            </div>
+            <div class="gps-live">
+              <div class="gps-dot"></div>
+              <div class="gps-live-txt">GPS Actif · Partagé avec Bricoma SARL</div>
+              <div class="gps-coords">31.92°N 6.35°W</div>
+            </div>
+            <div class="gps-bar">
+              <div class="gps-stat"><div class="gps-val">74</div><div class="gps-lbl">km/h</div></div>
+              <div class="gps-stat"><div class="gps-val">148</div><div class="gps-lbl">km reste</div></div>
+              <div class="gps-stat"><div class="gps-val">2h14</div><div class="gps-lbl">ETA</div></div>
+              <div class="gps-stat"><div class="gps-val">62%</div><div class="gps-lbl">trajet</div></div>
+            </div>
+          </div>
+
+          <!-- Trip progress bar -->
+          <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px;color:var(--text3);">
+              <span>Béni Mellal</span><span style="font-weight:700;color:var(--amber);">LOT-8821</span><span>Casablanca</span>
+            </div>
+            <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:10px;">
+              <div style="width:62%;height:100%;background:linear-gradient(90deg,var(--amber),var(--amber2));border-radius:3px;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text3);">🏋️ 22T Matériaux · Livraison avant 12:00</div>
+          </div>
+
+          <!-- 50/50 Payment -->
+          <div class="pay-widget">
+            <div class="pay-header">
+              <div class="pay-title">Paiement LOT-8821 · Bricoma SARL</div>
+              <div class="pay-fee">−3% frais</div>
+            </div>
+            <div class="pay-halves">
+              <div class="pay-half up">
+                <div class="ph-lbl g">50% À LA PRISE</div>
+                <div class="ph-amount g">MAD 3,395</div>
+                <div class="ph-when">Reçu · 07:15</div>
+                <div class="ph-status paid">✓ Reçu</div>
+              </div>
+              <div class="pay-half del">
+                <div class="ph-lbl a">50% LIVRAISON</div>
+                <div class="ph-amount a">MAD 3,395</div>
+                <div class="ph-when">Libéré par GPS</div>
+                <div class="ph-status wait">⏳ En route</div>
+              </div>
+            </div>
+            <div style="padding:0 14px 12px;display:flex;justify-content:space-between;font-size:11px;color:var(--text3);border-top:1px solid rgba(255,255,255,0.04);">
+              <span>Brut: MAD 7,000 · Frais: −MAD 210</span>
+              <span style="color:var(--green);font-weight:800;">Net: MAD 6,790</span>
+            </div>
+          </div>
+
+          <!-- GPS payment notice -->
+          <div style="margin:0 12px 10px;background:var(--amber-glow);border:1px solid rgba(240,180,41,0.2);border-radius:var(--r-sm);padding:11px 13px;font-size:11px;color:var(--text2);">
+            <strong style="color:var(--amber);">📍 Déclenchement automatique :</strong> Dès que votre GPS confirme l'arrivée à 500m de la destination, MAD 3,395 sont libérés. Aucun appel requis.
+          </div>
+
+          <button class="cta-btn-green" style="font-size:13px;padding:12px;">✅ Confirmer la livraison</button>
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab active"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab" style="position:relative;"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span><span class="pnav-badge">4</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 2: Load Board -->
+    <div class="phone-col">
+      <div class="phone-label green">📦 Tableau de chargements</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <div class="ph-section"><div class="ph-section-title">Chargements proches</div><div style="font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;">📍 Béni Mellal</div></div>
+
+          <!-- Load 1 -->
+          <div class="load-card">
+            <div style="position:absolute;top:10px;right:10px;" class="tag tag-red">🔥 URGENT</div>
+            <div class="lc-route" style="margin-right:60px;">
+              <div class="lc-city">Béni Mellal</div><div class="lc-arrow">→</div><div class="lc-city">Casablanca</div>
+            </div>
+            <div class="lc-price">MAD 6,790 <span style="font-size:10px;color:var(--text3);font-weight:400;">net</span></div>
+            <div class="lc-meta"><div class="lc-chip">🏋️ 18T</div><div class="lc-chip">📏 310km</div><div class="lc-chip">Matériaux</div></div>
+            <div class="lc-paysplit">
+              <span>Brut: 7,000 · Frais −3%: 210</span>
+              <span><span class="lc-ps-val g">3,395</span> + <span class="lc-ps-val a">3,395</span></span>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;">
+              <button style="flex:1;background:var(--amber);color:#0A0700;border:none;border-radius:8px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;">✅ Accepter</button>
+              <button style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-family:'Outfit',sans-serif;font-size:12px;color:var(--text3);cursor:pointer;">✕</button>
+            </div>
+          </div>
+
+          <!-- Load 2 -->
+          <div class="load-card">
+            <div class="lc-route">
+              <div class="lc-city">Kasba Tadla</div><div class="lc-arrow">→</div><div class="lc-city">Rabat</div>
+            </div>
+            <div class="lc-price">MAD 9,412 <span style="font-size:10px;color:var(--text3);font-weight:400;">net</span></div>
+            <div class="lc-meta"><div class="lc-chip">🏋️ 24T</div><div class="lc-chip">📏 240km</div><div class="lc-chip">OCP Group</div></div>
+            <div class="lc-paysplit">
+              <span>Brut: 9,700 · Frais −3%: 291</span>
+              <span><span class="lc-ps-val g">4,706</span> + <span class="lc-ps-val a">4,706</span></span>
+            </div>
+            <div style="margin-top:8px;">
+              <button style="width:100%;background:var(--amber);color:#0A0700;border:none;border-radius:8px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;">✅ Accepter</button>
+            </div>
+          </div>
+
+          <!-- Backhaul -->
+          <div class="load-card" style="border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.02);">
+            <div class="lc-route">
+              <div class="lc-city">Casablanca</div><div class="lc-arrow">→</div><div class="lc-city">Béni Mellal</div>
+              <span class="tag tag-green" style="font-size:8px;margin-left:4px;">RETOUR</span>
+            </div>
+            <div class="lc-price">MAD 4,220 <span style="font-size:10px;color:var(--text3);font-weight:400;">net</span></div>
+            <div class="lc-meta"><div class="lc-chip">🏋️ 12T</div><div class="lc-chip">📏 310km</div><div class="lc-chip">✓ Évite retour vide</div></div>
+            <div class="lc-paysplit">
+              <span>Brut: 4,350 · Frais: 131</span>
+              <span><span class="lc-ps-val g">2,110</span> + <span class="lc-ps-val a">2,110</span></span>
+            </div>
+            <div style="margin-top:8px;">
+              <button style="width:100%;background:var(--green);color:#021008;border:none;border-radius:8px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;">✅ Réserver retour</button>
+            </div>
+          </div>
+
+          <!-- Locked -->
+          <div class="load-card locked">
+            <div class="lc-route"><div class="lc-city">Béni Mellal</div><div class="lc-arrow">→</div><div class="lc-city">Tanger Med</div></div>
+            <div class="lc-price">MAD 14,160</div>
+            <div class="lc-meta"><div class="lc-chip">🏋️ 28T</div><div class="lc-chip">Stellantis</div></div>
+          </div>
+
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab active" style="position:relative;"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 3: Documents -->
+    <div class="phone-col">
+      <div class="phone-label">📋 Documents · Upload / Aide</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <div class="ph-section"><div class="ph-section-title">Mes documents</div></div>
+          <div style="margin:0 12px 10px;background:var(--blue-dim);border:1px solid rgba(96,165,250,0.18);border-radius:var(--r-sm);padding:11px 13px;font-size:11px;color:var(--text2);">
+            <strong style="color:var(--blue);">💡 Pas de document ?</strong> Appuyez sur "Je n'ai pas" — on vous guide pour l'obtenir.
+          </div>
+
+          <!-- CIN OK -->
+          <div class="doc-item">
+            <div class="doc-row">
+              <div class="doc-ico ok">🪪</div>
+              <div class="doc-body"><div class="doc-name">CIN — Carte d'identité</div><div class="doc-status ok">✓ Vérifié · expire 03/2030</div></div>
+              <span style="color:var(--green);font-size:18px;">✓</span>
+            </div>
+            <div class="doc-btns"><button class="doc-btn view">👁 Voir</button><button class="doc-btn upload">🔄 Renouveler</button></div>
+          </div>
+
+          <!-- Carte grise pending -->
+          <div class="doc-item">
+            <div class="doc-row">
+              <div class="doc-ico pend">📄</div>
+              <div class="doc-body"><div class="doc-name">Carte grise</div><div class="doc-status pend">⏳ Vérification en cours</div></div>
+            </div>
+            <div class="doc-btns"><button class="doc-btn upload">📸 Nouvelle photo</button><button class="doc-btn help">❓ Aide</button></div>
+          </div>
+
+          <!-- Assurance missing -->
+          <div class="doc-item">
+            <div class="doc-row">
+              <div class="doc-ico miss">🛡️</div>
+              <div class="doc-body"><div class="doc-name">Assurance RC Transport</div><div class="doc-status miss">✗ Non fourni</div></div>
+            </div>
+            <div class="doc-btns"><button class="doc-btn upload">📸 J'ai une assurance</button><button class="doc-btn skip">✗ Je n'ai pas</button></div>
+            <!-- obtain help expanded -->
+            <div style="background:rgba(96,165,250,0.05);border-top:1px solid rgba(96,165,250,0.15);padding:12px 14px;">
+              <div style="font-size:11px;font-weight:800;color:var(--blue);margin-bottom:8px;">🛡️ Obtenir une Assurance RC</div>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);"><div style="width:16px;height:16px;border-radius:50%;background:var(--blue-dim);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;">1</div><span>Wafaassurance — souscription 100% mobile</span></div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);"><div style="width:16px;height:16px;border-radius:50%;background:var(--blue-dim);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;">2</div><span>Tarif groupe TriqLog : <strong style="color:var(--text);">180 DH/mois</strong></span></div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);"><div style="width:16px;height:16px;border-radius:50%;background:var(--blue-dim);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;">3</div><span>Attestation par WhatsApp sous 24h</span></div>
+              </div>
+              <button style="width:100%;background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;">Souscrire — 180 DH/mois</button>
+            </div>
+          </div>
+
+          <!-- CNSS optional -->
+          <div class="doc-item">
+            <div class="doc-row">
+              <div class="doc-ico opt">📋</div>
+              <div class="doc-body"><div class="doc-name">CNSS</div><div class="doc-status opt">○ Optionnel · Niveau Argent</div></div>
+            </div>
+            <div class="doc-btns"><button class="doc-btn upload">📸 J'ai mon CNSS</button><button class="doc-btn skip">✗ Je n'ai pas</button></div>
+          </div>
+
+          <!-- Visite technique expired -->
+          <div class="doc-item">
+            <div class="doc-row">
+              <div class="doc-ico miss">🔧</div>
+              <div class="doc-body"><div class="doc-name">Visite technique</div><div class="doc-status miss">✗ Expirée — juin 2025</div></div>
+            </div>
+            <div class="doc-btns"><button class="doc-btn upload">📸 J'ai renouvelé</button><button class="doc-btn help">📍 Trouver centre</button></div>
+          </div>
+
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab" style="position:relative;"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span></button>
+          <button class="pnav-tab active"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 4: Formalize Me -->
+    <div class="phone-col">
+      <div class="phone-label amber">✨ Formalize Me — Wizard</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <div class="wiz-hero">
+            <span class="wiz-emoji">✨</span>
+            <div class="wiz-title">Conducteur Premium</div>
+            <div class="wiz-desc">TriqLog gère l'inscription Auto-Entrepreneur à votre place. Zéro déplacement.</div>
+          </div>
+
+          <div style="padding:0 12px 8px;display:flex;gap:5px;justify-content:center;">
+            <div style="width:18px;height:5px;border-radius:3px;background:var(--green);"></div>
+            <div style="width:18px;height:5px;border-radius:3px;background:var(--amber);"></div>
+            <div style="width:5px;height:5px;border-radius:50%;background:var(--surface2);"></div>
+            <div style="width:5px;height:5px;border-radius:50%;background:var(--surface2);"></div>
+            <div style="width:5px;height:5px;border-radius:50%;background:var(--surface2);"></div>
+          </div>
+
+          <!-- Choices -->
+          <div class="choice-card sel">
+            <div class="cc-ico" style="background:var(--amber-dim);">🆕</div>
+            <div class="cc-body"><div class="cc-name">Je n'ai aucun document</div><div class="cc-sub">TriqLog s'occupe de tout — AE, CNSS, assurance.</div><div class="tag tag-amber" style="margin-top:5px;font-size:9px;">Géré par TriqLog</div></div>
+            <div class="cc-check" style="background:var(--amber);border-color:var(--amber);color:#0A0600;">✓</div>
+          </div>
+          <div class="choice-card">
+            <div class="cc-ico" style="background:var(--green-dim);">📂</div>
+            <div class="cc-body"><div class="cc-name">J'ai déjà des documents</div><div class="cc-sub">RC, CNSS — je veux accéder au Premium rapidement.</div><div class="tag tag-green" style="margin-top:5px;font-size:9px;">Accès en 24–48h</div></div>
+            <div class="cc-check"></div>
+          </div>
+
+          <!-- AE Steps -->
+          <div style="padding:12px 14px 4px;font-size:11px;font-weight:800;color:var(--text2);">Processus d'inscription AE</div>
+          <div class="ae-track">
+            <div class="ae-node done"><div class="ae-circle">✓</div><div class="ae-txt"><div class="ae-title">Dossier préparé</div><div class="ae-sub">Formulaire AE rempli avec vos données</div><div class="ae-time">✓ Fait par TriqLog</div></div></div>
+            <div class="ae-node active"><div class="ae-circle">✍️</div><div class="ae-txt"><div class="ae-title">Votre signature</div><div class="ae-sub">Procuration numérique + code SMS</div><div class="ae-time">→ Étape en cours</div></div></div>
+            <div class="ae-node"><div class="ae-circle">🚶</div><div class="ae-txt"><div class="ae-title">Agent dépose au CRI</div><div class="ae-sub">Béni Mellal — avec dossier complet</div><div class="ae-time">Jour 1</div></div></div>
+            <div class="ae-node"><div class="ae-circle">⭐</div><div class="ae-txt"><div class="ae-title">Premium activé</div><div class="ae-sub">Commission 3%→2%, grands comptes</div><div class="ae-time">Jour 3–5</div></div></div>
+          </div>
+
+          <!-- Cost -->
+          <div class="cost-rows" style="margin-top:4px;">
+            <div class="cost-row"><span class="cost-label">Frais CRI officiels</span><span class="cost-val">MAD 350</span></div>
+            <div class="cost-row"><span class="cost-label">Agent TriqLog</span><span class="cost-val">MAD 200</span></div>
+            <div class="cost-row"><span class="cost-label">Préparation dossier</span><span class="cost-val g">GRATUIT</span></div>
+            <div class="cost-total-row"><span>Total avancé par TriqLog</span><span class="cost-val">MAD 550</span></div>
+          </div>
+
+          <div style="margin:0 12px 10px;background:var(--green-dim);border:1px solid rgba(34,197,94,0.18);border-radius:var(--r-sm);padding:10px 12px;font-size:11px;color:var(--text2);">
+            <strong style="color:var(--green);">📈 ROI :</strong> −1% commission = <strong>+MAD 85/voyage en moyenne</strong>. Rentabilisé en 7 voyages.
+          </div>
+
+          <button class="cta-btn" style="font-size:13px;padding:12px;">Signer & Soumettre →</button>
+
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab active"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 5: Wallet -->
+    <div class="phone-col">
+      <div class="phone-label green">💰 Argent · Sans banque</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <div class="wallet-hero">
+            <div class="wh-lbl">Solde disponible</div>
+            <div class="wh-amount">MAD 3,395</div>
+            <div class="wh-pending">+ <span>MAD 3,395</span> libéré à livraison GPS</div>
+          </div>
+
+          <div class="ph-section"><div class="ph-section-title">Comment retirer</div></div>
+          <div class="pmethod-row">
+            <div class="pm-card active"><div class="pm-ico">🤝</div><div class="pm-name">Agent Cash</div><div class="pm-sub">Votre ville · 0 frais</div></div>
+            <div class="pm-card"><div class="pm-ico">📱</div><div class="pm-name">Wafacash</div><div class="pm-sub">2,400 points</div></div>
+            <div class="pm-card"><div class="pm-ico">🏦</div><div class="pm-name">CIH Mobile</div><div class="pm-sub">CIN seul</div></div>
+            <div class="pm-card"><div class="pm-ico">⛽</div><div class="pm-name">Afriquia</div><div class="pm-sub">−0.8 DH/L</div></div>
+          </div>
+
+          <button class="cta-btn" style="font-size:13px;padding:11px;">💵 Retirer MAD 3,395 — Agent Cash</button>
+
+          <div class="ph-section"><div class="ph-section-title">Historique</div></div>
+          <div class="card" style="margin:0 12px 10px;">
+            <div class="tx-item"><div class="tx-ico cr">✅</div><div class="tx-body"><div class="tx-name">50% LOT-8821 — Prise en charge</div><div class="tx-sub">06/04 · 07:15 · Bricoma SARL</div></div><div class="tx-amt g">+3,395</div></div>
+            <div class="tx-item"><div class="tx-ico pe">⏳</div><div class="tx-body"><div class="tx-name">50% LOT-8821 — À la livraison</div><div class="tx-sub">GPS confirme arrivée → libéré</div></div><div class="tx-amt a">+3,395</div></div>
+            <div class="tx-item"><div class="tx-ico db">⛽</div><div class="tx-body"><div class="tx-name">Carte carburant Afriquia</div><div class="tx-sub">05/04 · Station Béni Mellal</div></div><div class="tx-amt r">−480</div></div>
+            <div class="tx-item"><div class="tx-ico cr">✅</div><div class="tx-body"><div class="tx-name">LOT-8780 — Fès → Casa complet</div><div class="tx-sub">03/04 · Frais: −165 DH</div></div><div class="tx-amt g">+5,335</div></div>
+            <div class="tx-item"><div class="tx-ico db">🏦</div><div class="tx-body"><div class="tx-name">Retrait Agent Cash</div><div class="tx-sub">03/04 · Code SHL-6612 · Béni Mellal</div></div><div class="tx-amt r">−5,000</div></div>
+          </div>
+
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab active"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /phone-grid driver -->
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PLATFORM DIVIDER
+═══════════════════════════════════════════ -->
+<div class="platform-divider">
+  <div class="pd-line"></div>
+  <div style="text-align:center;">
+    <div class="pd-label">Plateforme complète · Two-sided</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:'IBM Plex Mono',monospace;">CHAUFFEUR ↔ CHARGEUR · GPS · PAIEMENT · E-INVOICE</div>
+  </div>
+  <div class="pd-line"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     OPERATOR SIDE
+═══════════════════════════════════════════ -->
+<div class="section-wrap">
+  <div class="section-head">
+    <div class="section-kicker">Côté Chargeur / Opérateur</div>
+    <div class="section-title">Dashboard Opérateur</div>
+    <div class="section-sub">Web app for shippers and logistics managers — post loads, track in real time, manage e-invoices, QuickPay drivers.</div>
+  </div>
+
+  <div class="phone-grid">
+
+    <!-- OP PHONE 1: Dashboard -->
+    <div class="phone-col">
+      <div class="phone-label" style="color:var(--purple);">📊 Dashboard · Carte live</div>
+      <div class="phone op-phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>TriqLog Logistics</span></div></div>
+        <div class="phone-content">
+          <div class="op-hero">
+            <div class="op-greeting">Bonjour, TriqLog Logistics 👋</div>
+            <div class="op-stats">
+              <div class="op-stat"><div class="op-stat-val" style="color:var(--amber);">47</div><div class="op-stat-lbl">Chargements actifs</div><div class="op-stat-delta up">▲ +8 aujourd'hui</div></div>
+              <div class="op-stat"><div class="op-stat-val" style="color:var(--green);">183</div><div class="op-stat-lbl">Camions dispo.</div><div class="op-stat-delta up">94% vérifiés</div></div>
+              <div class="op-stat"><div class="op-stat-val" style="color:var(--blue);">31%</div><div class="op-stat-lbl">Km vides ↓</div><div class="op-stat-delta up">Avant: 58%</div></div>
+              <div class="op-stat"><div class="op-stat-val" style="color:var(--green);">847K</div><div class="op-stat-lbl">Rev. Avr. (MAD)</div><div class="op-stat-delta up">▲ +12%</div></div>
+            </div>
+          </div>
+
+          <!-- Morocco live map -->
+          <div class="op-map">
+            <svg viewBox="0 0 360 160" xmlns="http://www.w3.org/2000/svg">
+              <rect width="360" height="160" fill="#0A1020"/>
+              <!-- grid -->
+              <g stroke="rgba(96,165,250,0.05)" stroke-width="1">
+                <line x1="0" y1="40" x2="360" y2="40"/><line x1="0" y1="80" x2="360" y2="80"/><line x1="0" y1="120" x2="360" y2="120"/>
+                <line x1="72" y1="0" x2="72" y2="160"/><line x1="144" y1="0" x2="144" y2="160"/><line x1="216" y1="0" x2="216" y2="160"/><line x1="288" y1="0" x2="288" y2="160"/>
+              </g>
+              <!-- Morocco rough shape -->
+              <path d="M60,20 L220,15 L280,30 L320,70 L330,110 L300,145 L240,155 L160,155 L100,140 L65,110 L45,70 Z" fill="rgba(96,165,250,0.04)" stroke="rgba(96,165,250,0.12)" stroke-width="1.5"/>
+              <!-- Routes -->
+              <line x1="135" y1="40" x2="108" y2="80" stroke="rgba(240,180,41,0.3)" stroke-width="2" stroke-dasharray="5 4"/>
+              <line x1="108" y1="80" x2="120" y2="115" stroke="rgba(240,180,41,0.3)" stroke-width="2" stroke-dasharray="5 4"/>
+              <line x1="108" y1="80" x2="195" y2="58" stroke="rgba(96,165,250,0.3)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            </svg>
+            <!-- Truck dots -->
+            <div class="map-dot active" style="left:108px;top:80px;"></div>
+            <div class="map-dot active" style="left:135px;top:40px;"></div>
+            <div class="map-dot idle" style="left:120px;top:62px;"></div>
+            <div class="map-dot active" style="left:195px;top:58px;"></div>
+            <div class="map-dot seek" style="left:262px;top:55px;"></div>
+            <div class="map-dot idle" style="left:108px;top:130px;"></div>
+            <div class="map-dot active" style="left:90px;top:52px;"></div>
+            <!-- City labels -->
+            <div class="map-city" style="left:90px;top:22px;">Tanger</div>
+            <div class="map-city" style="left:84px;top:75px;">Casa</div>
+            <div class="map-city" style="left:102px;top:108px;">Marrakech</div>
+            <div class="map-city" style="left:178px;top:45px;">Fès</div>
+            <div class="map-city" style="left:248px;top:42px;">Oujda</div>
+            <div class="map-legend">
+              <div class="ml-item"><div class="ml-dot" style="background:var(--green);"></div>En route</div>
+              <div class="ml-item"><div class="ml-dot" style="background:var(--amber);"></div>Idle</div>
+              <div class="ml-item"><div class="ml-dot" style="background:var(--red);"></div>Backhaul</div>
+            </div>
+          </div>
+
+          <!-- Revenue card -->
+          <div style="margin:0 12px 10px;background:linear-gradient(135deg,#120A1E,#1A0E2A);border:1px solid rgba(192,132,252,0.2);border-radius:var(--r);padding:16px;position:relative;overflow:hidden;">
+            <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:40px;opacity:0.1;">💎</div>
+            <div style="font-size:9px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Revenus plateforme · Avril 2026</div>
+            <div style="font-size:26px;font-weight:900;color:var(--purple);">MAD 847,300</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px;">Commission 3% + QuickPay spread</div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button style="flex:1;background:var(--amber-dim);border:1px solid rgba(240,180,41,0.3);color:var(--amber);border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">⚡ QuickPay</button>
+              <button style="flex:1;background:var(--purple-dim);border:1px solid rgba(192,132,252,0.25);color:var(--purple);border-radius:8px;padding:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">📊 Rapport</button>
+            </div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="ph-section"><div class="ph-section-title">Activité en temps réel</div><div class="ph-section-link">Tout voir</div></div>
+          <div class="card" style="margin:0 12px 10px;">
+            <div class="feed-item"><div class="feed-ico" style="background:var(--amber-dim);">🚛</div><div class="feed-body"><div class="feed-name">Match confirmé</div><div class="feed-detail">Tanger Med → Casa · 23T pièces auto</div></div><div class="feed-time">2m</div></div>
+            <div class="feed-item"><div class="feed-ico" style="background:var(--green-dim);">💳</div><div class="feed-body"><div class="feed-name">QuickPay versé</div><div class="feed-detail">MAD 12,400 → Hassan B. · LOT-8821</div></div><div class="feed-time">8m</div></div>
+            <div class="feed-item"><div class="feed-ico" style="background:rgba(240,180,41,0.1);">🧾</div><div class="feed-body"><div class="feed-name">E-Invoice envoyée</div><div class="feed-detail">INV-2026-0441 · DGI · MAD 34,800</div></div><div class="feed-time">15m</div></div>
+            <div class="feed-item"><div class="feed-ico" style="background:var(--blue-dim);">✨</div><div class="feed-body"><div class="feed-name">Premium activé</div><div class="feed-detail">Mustapha B. · Auto-Entrepreneur inscrit</div></div><div class="feed-time">22m</div></div>
+            <div class="feed-item"><div class="feed-ico" style="background:var(--green-dim);">🔄</div><div class="feed-body"><div class="feed-name">Backhaul évité</div><div class="feed-detail">Marrakech → Agadir · 340km vides économisés</div></div><div class="feed-time">31m</div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- OP PHONE 2: Post Load -->
+    <div class="phone-col">
+      <div class="phone-label" style="color:var(--purple);">📦 Poster un chargement</div>
+      <div class="phone op-phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>TriqLog Logistics</span></div></div>
+        <div class="phone-content">
+          <div class="ph-section"><div class="ph-section-title">Nouveau chargement</div></div>
+
+          <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;">
+            <!-- Route -->
+            <div style="font-size:10px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(240,180,41,0.1);">📍 Route</div>
+            <div class="form-row-mini">
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Départ</div><select class="form-input-mini"><option>Tanger Med Port</option><option>Casablanca</option></select></div>
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Destination</div><select class="form-input-mini"><option>Casablanca — ZI</option><option>Rabat</option></select></div>
+            </div>
+            <div class="form-row-mini">
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Date enlèvement</div><input class="form-input-mini" type="date" value="2026-04-08"></div>
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Deadline livraison</div><input class="form-input-mini" type="date" value="2026-04-09"></div>
+            </div>
+
+            <div style="font-size:10px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 10px;padding-top:10px;border-top:1px solid rgba(240,180,41,0.1);">📦 Cargaison</div>
+            <div class="form-row-mini">
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Type</div><select class="form-input-mini"><option>Pièces auto</option><option>Construction</option></select></div>
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Poids (T)</div><input class="form-input-mini" value="23" type="number"></div>
+            </div>
+            <div class="form-group-mini"><div class="form-label-mini">Camion requis</div><select class="form-input-mini"><option>Semi-remorque (Plein)</option><option>Frigorifique</option></select></div>
+
+            <div style="font-size:10px;font-weight:800;color:var(--amber);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;margin:10px 0 10px;padding-top:10px;border-top:1px solid rgba(240,180,41,0.1);">💰 Paiement</div>
+            <div class="form-row-mini">
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Mode</div><select class="form-input-mini"><option>Virement bancaire</option><option>Chèque</option></select></div>
+              <div class="form-group-mini" style="flex:1;"><div class="form-label-mini">Délai</div><select class="form-input-mini"><option>Net 30</option><option>Net 45</option></select></div>
+            </div>
+          </div>
+
+          <!-- Price estimator -->
+          <div class="price-est" style="margin:0 12px 10px;">
+            <div class="pe-label">Tarif marché estimé</div>
+            <div class="pe-amount">MAD 9,200 – 11,400</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'IBM Plex Mono',monospace;">340km · 23T · Confiance: haute</div>
+            <div class="pe-bar"><div class="pe-fill"></div></div>
+          </div>
+
+          <!-- Options -->
+          <div style="margin:0 12px 10px;display:flex;gap:6px;flex-wrap:wrap;">
+            <div class="tag tag-amber">📍 GPS inclus</div>
+            <div class="tag tag-green">🧾 E-Invoice auto</div>
+            <div class="tag tag-blue">⚡ QuickPay driver</div>
+            <div class="tag tag-grey">🛡️ Assurance cargo</div>
+          </div>
+
+          <button class="cta-btn" style="font-size:13px;padding:12px;">🚛 Poster et recevoir devis</button>
+
+          <!-- Incoming quotes -->
+          <div class="ph-section" style="margin-top:4px;"><div class="ph-section-title">Devis reçus (3)</div></div>
+
+          <div class="quote-card best">
+            <div style="position:absolute;top:10px;right:10px;" class="tag tag-amber" style="font-size:8px;">⭐ MEILLEUR</div>
+            <div class="qc-driver">
+              <div class="qc-avatar">🧔</div>
+              <div><div class="qc-name">Hassan Benali</div><div class="qc-meta">MA-1204 · Volvo FH · ⭐ Premium</div></div>
+            </div>
+            <div class="qc-price">MAD 10,200 <span style="font-size:11px;color:var(--text3);font-weight:400;">TVA incl.</span></div>
+            <div class="qc-stars">★★★★★ <span style="color:var(--text3);font-size:10px;">4.9 · 312 voyages · 99% ponctuel</span></div>
+            <div class="qc-tags"><div class="tag tag-green" style="font-size:9px;">✓ GPS</div><div class="tag tag-green" style="font-size:9px;">✓ Assuré</div><div class="tag tag-amber" style="font-size:9px;">ETA: 6h20</div></div>
+          </div>
+
+          <div class="quote-card">
+            <div class="qc-driver"><div class="qc-avatar">👨</div><div><div class="qc-name">Rachid Ouhaj</div><div class="qc-meta">MA-3312 · Mercedes Actros</div></div></div>
+            <div class="qc-price">MAD 9,500</div>
+            <div class="qc-stars">★★★★☆ <span style="color:var(--text3);font-size:10px;">4.3 · 178 voyages</span></div>
+            <div class="qc-tags"><div class="tag tag-green" style="font-size:9px;">✓ GPS</div><div class="tag tag-amber" style="font-size:9px;">ETA: 7h10</div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- OP PHONE 3: E-Invoice -->
+    <div class="phone-col">
+      <div class="phone-label amber">🧾 E-Invoice DGI 2026</div>
+      <div class="phone op-phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>TriqLog Logistics</span></div></div>
+        <div class="phone-content">
+          <!-- DGI compliance banner -->
+          <div style="margin:12px;background:linear-gradient(135deg,#201508,#2A1C08);border:1px solid rgba(240,180,41,0.3);border-radius:var(--r);padding:14px;display:flex;gap:12px;align-items:center;">
+            <div style="font-size:28px;">🏛️</div>
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:800;">DGI E-Invoicing 2026</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:3px;">Toutes factures générées automatiquement — ICE intégré</div>
+            </div>
+            <div class="tag tag-green" style="font-size:9px;">✓ Conforme</div>
+          </div>
+
+          <!-- Stats -->
+          <div class="card" style="margin:0 12px 10px;">
+            <div class="stat-strip">
+              <div class="stat-cell"><div class="stat-val" style="color:var(--amber);">MAD 155K</div><div class="stat-lbl">Rev. Avr.</div></div>
+              <div class="stat-cell"><div class="stat-val" style="color:var(--purple);">MAD 25,9K</div><div class="stat-lbl">TVA 20%</div></div>
+              <div class="stat-cell"><div class="stat-val" style="color:var(--red);">MAD 22K</div><div class="stat-lbl">En attente</div></div>
+            </div>
+          </div>
+
+          <!-- Invoice table -->
+          <div class="card" style="margin:0 12px 10px;overflow:hidden;">
+            <table class="inv-table">
+              <thead><tr><th>N°</th><th>Route</th><th>Montant</th><th>Statut</th></tr></thead>
+              <tbody>
+                <tr><td class="inv-num">0441</td><td style="font-size:10px;">Tanger→Casa</td><td style="font-size:11px;font-weight:700;">34,800</td><td><span class="tag tag-green" style="font-size:8px;">✓ DGI</span></td></tr>
+                <tr><td class="inv-num">0440</td><td style="font-size:10px;">Casa→Marra.</td><td style="font-size:11px;font-weight:700;">17,733</td><td><span class="tag tag-amber" style="font-size:8px;">Envoyé</span></td></tr>
+                <tr><td class="inv-num">0439</td><td style="font-size:10px;">Rabat→Agadir</td><td style="font-size:11px;font-weight:700;">44,800</td><td><span class="tag tag-green" style="font-size:8px;">✓ DGI</span></td></tr>
+                <tr><td class="inv-num">0438</td><td style="font-size:10px;">Fès→Nador</td><td style="font-size:11px;font-weight:700;">25,783</td><td><span class="tag" style="background:var(--amber-dim);color:var(--amber);font-size:8px;">Attente</span></td></tr>
+                <tr><td class="inv-num">0437</td><td style="font-size:10px;">Oujda→Casa</td><td style="font-size:11px;font-weight:700;">36,750</td><td><span class="tag tag-green" style="font-size:8px;">✓ DGI</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Invoice preview -->
+          <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+              <div><div style="font-size:15px;font-weight:900;">FACTURE</div><div style="font-size:9px;color:var(--text3);">Conforme DGI 2026</div></div>
+              <div style="text-align:right;"><div style="font-size:10px;font-weight:700;color:var(--amber);font-family:'IBM Plex Mono',monospace;">INV-2026-0441</div><div style="font-size:9px;color:var(--text3);">05/04/2026</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;font-size:10px;">
+              <div><div style="color:var(--text3);font-weight:700;margin-bottom:3px;">ÉMETTEUR</div><div style="font-weight:700;">TriqLog SARL</div><div style="color:var(--text3);">ICE: 002847300000041</div></div>
+              <div><div style="color:var(--text3);font-weight:700;margin-bottom:3px;">DESTINATAIRE</div><div style="font-weight:700;">Stellantis Maroc</div><div style="color:var(--text3);">ICE: 001738200000012</div></div>
+            </div>
+            <div style="font-size:11px;">
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text2);font-size:10px;"><span>Transport Tanger Med → Casa (23T)</span><span>29,830</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:var(--text2);font-size:10px;"><span>TVA 20%</span><span>4,970</span></div>
+              <div style="display:flex;justify-content:space-between;padding:8px 0 0;font-weight:900;font-size:13px;"><span>TOTAL TTC</span><span style="color:var(--amber);">MAD 34,800</span></div>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <button style="flex:1;background:var(--amber);color:#0A0700;border:none;border-radius:8px;padding:8px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Outfit',sans-serif;">📤 Envoyer DGI</button>
+              <button style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-size:11px;font-weight:700;color:var(--text2);cursor:pointer;font-family:'Outfit',sans-serif;">PDF</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Premium Success -->
+    <div class="phone-col">
+      <div class="phone-label amber">⭐ Premium — Activé !</div>
+      <div class="phone">
+        <div class="phone-bar"><div class="pb-time">09:41</div><div class="pb-icons"><span>📍</span><span>🔋87%</span></div></div>
+        <div class="phone-content">
+          <div class="premium-success">
+            <div class="ps-glow"></div>
+            <span class="ps-emoji">🎉</span>
+            <div class="ps-title">Félicitations, Mustapha !</div>
+            <div class="ps-sub">Votre inscription Auto-Entrepreneur est en cours. Statut Premium activé — accès complet dès maintenant.</div>
+            <div class="ps-perks">
+              <div class="ps-perk">Commission 2%</div>
+              <div class="ps-perk">Grands comptes</div>
+              <div class="ps-perk">E-invoice auto</div>
+              <div class="ps-perk">CNSS actif</div>
+              <div class="ps-perk">Wafaassurance</div>
+            </div>
+          </div>
+
+          <div style="margin:0 12px 10px;background:var(--green-dim);border:1px solid rgba(34,197,94,0.2);border-radius:var(--r-sm);padding:12px 14px;font-size:11px;color:var(--text2);">
+            <strong style="color:var(--green);">📅 Prochaines étapes :</strong><br>
+            • Jour 1 : Agent TriqLog → CRI Béni Mellal<br>
+            • Jour 2–3 : Récépissé AE par WhatsApp<br>
+            • Jour 3–5 : Numéro AE officiel — Premium confirmé<br>
+            • MAD 550 récupérés sur 3ème voyage
+          </div>
+
+          <!-- Now unlocked loads -->
+          <div class="ph-section"><div class="ph-section-title">Nouveaux chargements débloqués</div></div>
+
+          <div class="load-card" style="border-color:rgba(240,180,41,0.3);background:var(--amber-glow);">
+            <div style="position:absolute;top:10px;right:10px;" class="tag tag-amber">DÉBLOQUÉ ⭐</div>
+            <div class="lc-route" style="margin-right:80px;"><div class="lc-city">Béni Mellal</div><div class="lc-arrow">→</div><div class="lc-city">Tanger Med</div></div>
+            <div class="lc-price">MAD 14,160</div>
+            <div class="lc-meta"><div class="lc-chip">🏋️ 28T</div><div class="lc-chip">Stellantis</div></div>
+            <div class="lc-paysplit"><span>Brut: 14,600 · Frais 2%: 292</span><span><span class="lc-ps-val g">7,154</span> + <span class="lc-ps-val a">7,154</span></span></div>
+            <div style="margin-top:8px;"><button style="width:100%;background:var(--amber);color:#0A0700;border:none;border-radius:8px;padding:9px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;">✅ Accepter ce chargement</button></div>
+          </div>
+
+          <div class="load-card">
+            <div class="lc-route"><div class="lc-city">Kasba Tadla</div><div class="lc-arrow">→</div><div class="lc-city">Rabat</div></div>
+            <div class="lc-price">MAD 9,412</div>
+            <div class="lc-meta"><div class="lc-chip">OCP Group</div><div class="lc-chip">24T</div><div class="lc-chip">240km</div></div>
+            <div class="lc-paysplit"><span>Brut: 9,700 · Frais 2%: 194</span><span><span class="lc-ps-val g">4,753</span> + <span class="lc-ps-val a">4,753</span></span></div>
+          </div>
+
+          <!-- Earnings comparison -->
+          <div style="margin:0 12px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+            <div style="padding:12px 14px;font-size:12px;font-weight:800;border-bottom:1px solid var(--border);">Avant vs Après Premium</div>
+            <div style="display:flex;">
+              <div style="flex:1;padding:12px 14px;border-right:1px solid var(--border);">
+                <div style="font-size:9px;color:var(--red);font-family:'IBM Plex Mono',monospace;font-weight:800;text-transform:uppercase;margin-bottom:4px;">AVANT</div>
+                <div style="font-size:16px;font-weight:900;color:var(--text2);">MAD 22K/mois</div>
+                <div style="font-size:9px;color:var(--text3);margin-top:2px;">Commission 3% · Accès limité</div>
+              </div>
+              <div style="flex:1;padding:12px 14px;">
+                <div style="font-size:9px;color:var(--green);font-family:'IBM Plex Mono',monospace;font-weight:800;text-transform:uppercase;margin-bottom:4px;">AVEC PREMIUM</div>
+                <div style="font-size:16px;font-weight:900;color:var(--green);">MAD 48K+/mois</div>
+                <div style="font-size:9px;color:var(--text3);margin-top:2px;">Commission 2% · Grands comptes</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="phone-nav">
+          <button class="pnav-tab active"><span class="pnav-ico">🏠</span><span class="pnav-lbl">Accueil</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📦</span><span class="pnav-lbl">Chargements</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">📋</span><span class="pnav-lbl">Documents</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">💰</span><span class="pnav-lbl">Argent</span></button>
+          <button class="pnav-tab"><span class="pnav-ico">👤</span><span class="pnav-lbl">Profil</span></button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FLOW DIAGRAM
+═══════════════════════════════════════════ -->
+<div class="flow-section">
+  <div class="section-head">
+    <div class="section-kicker">Comment ça marche</div>
+    <div class="section-title">Le flux complet</div>
+    <div class="section-sub">From posting a load to cash in a driver's hand — fully digital, GPS-triggered, DGI-compliant.</div>
+  </div>
+  <div class="flow-grid">
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--purple-dim);">📦</div>
+      <div class="fn-title">Chargeur poste</div>
+      <div class="fn-desc">Route, poids, délai. Prix estimé automatiquement.</div>
+      <div class="fn-tag tag tag-grey">~2 min</div>
+    </div>
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--blue-dim);">🤝</div>
+      <div class="fn-title">Match GPS</div>
+      <div class="fn-desc">3 devis de chauffeurs proches en 4 minutes.</div>
+      <div class="fn-tag tag tag-blue">4 min</div>
+    </div>
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--green-dim);">💳</div>
+      <div class="fn-title">50% versé</div>
+      <div class="fn-desc">À l'acceptation du chargement. Cash, Wafacash, virement.</div>
+      <div class="fn-tag tag tag-green">Immédiat</div>
+    </div>
+    <div class="flow-node">
+      <div class="fn-icon" style="background:rgba(240,180,41,0.1);">📍</div>
+      <div class="fn-title">GPS en route</div>
+      <div class="fn-desc">Chargeur suit en temps réel. Pas d'appels.</div>
+      <div class="fn-tag tag tag-amber">Live</div>
+    </div>
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--green-dim);">✅</div>
+      <div class="fn-title">GPS confirme</div>
+      <div class="fn-desc">Arrivée à 500m → 50% libéré automatiquement.</div>
+      <div class="fn-tag tag tag-green">Auto</div>
+    </div>
+    <div class="flow-node">
+      <div class="fn-icon" style="background:rgba(240,180,41,0.1);">🧾</div>
+      <div class="fn-title">E-invoice DGI</div>
+      <div class="fn-desc">Facture générée, TVA calculée, soumise au DGI.</div>
+      <div class="fn-tag tag tag-amber">2026 ✓</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════ -->
+<div class="footer">
+  <div class="footer-logo">Shahi<span>Log</span></div>
+  <div class="footer-arabic">طريق لوج · المغرب · Logistics as Fintech</div>
+  <div class="footer-pills">
+    <div class="hero-pill amber">Tanger Med · Casablanca · Marrakech · Fès · Agadir · Oujda</div>
+    <div class="hero-pill green">Auto-Entrepreneur · CNSS · Wafaassurance</div>
+    <div class="hero-pill">DGI E-Invoice · QuickPay · Agent Cash · Wafacash</div>
+  </div>
+  <div class="footer-note">Built for Morocco's informal trucking economy — GPS-triggered payments, progressive formalization, and logistics-as-fintech. From CIN-only to full Auto-Entrepreneur, on one platform.</div>
+</div>
+
+</div><!-- wrapper -->
+</body>
+</html>

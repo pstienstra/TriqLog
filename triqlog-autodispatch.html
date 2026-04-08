@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TriqLog — Auto-Dispatch Documents</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090E;--bg2:#0E1018;--bg3:#13151F;
+  --surface:#181B28;--surface2:#1E2235;--surface3:#242840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --amber:#F0B429;--amber2:#FFD166;--amber-dim:rgba(240,180,41,0.12);--amber-glow:rgba(240,180,41,0.05);
+  --green:#22C55E;--green2:#4ADE80;--green-dim:rgba(34,197,94,0.11);
+  --red:#EF4444;--red-dim:rgba(239,68,68,0.1);
+  --blue:#60A5FA;--blue-dim:rgba(96,165,250,0.1);
+  --teal:#2DD4BF;--teal-dim:rgba(45,212,191,0.1);
+  --purple:#C084FC;--purple-dim:rgba(192,132,252,0.1);
+  --text:#EEF0FA;--text2:#8891AE;--text3:#454C6A;--text4:#272D42;
+  --r:14px;--r-sm:9px;
+  --shadow:0 8px 32px rgba(0,0,0,0.55);
+  --shadow-lg:0 20px 60px rgba(0,0,0,0.65);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+body::before{
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 20%,rgba(240,180,41,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 80%,rgba(45,212,191,0.03) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+.page{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 24px 60px;}
+
+/* ── PAGE HEADER ── */
+.page-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:28px 0 32px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:36px;
+}
+.ph-left{display:flex;align-items:center;gap:14px;}
+.ph-logo{
+  width:48px;height:48px;background:linear-gradient(135deg,var(--amber),#B07010);
+  border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;box-shadow:0 6px 20px rgba(240,180,41,0.3);
+}
+.ph-title{font-size:24px;font-weight:900;letter-spacing:-0.5px;}
+.ph-title span{color:var(--amber);}
+.ph-sub{font-size:12px;color:var(--text3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.ph-right{display:flex;align-items:center;gap:10px;}
+.ph-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 16px;text-align:center;}
+.ph-stat-val{font-size:18px;font-weight:800;}
+.ph-stat-lbl{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:1px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:28px;}
+.tab{
+  flex:1;padding:10px 8px;border-radius:9px;border:none;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;
+  color:var(--text3);background:none;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.tab.active{background:var(--surface2);color:var(--amber);border:1px solid rgba(240,180,41,0.2);}
+.tab-badge{background:var(--red);color:#fff;border-radius:100px;padding:1px 7px;font-size:9px;font-weight:800;font-family:'IBM Plex Mono',monospace;}
+.tab-badge.green{background:var(--green);}
+.tab-badge.amber{background:var(--amber);color:#0A0700;}
+
+/* ── PANELS ── */
+.panel{display:none;}
+.panel.active{display:block;animation:fu .25s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── TRIGGER ENGINE PANEL ── */
+.trigger-hero{
+  background:linear-gradient(135deg,#0E1A0A,#141E0E);
+  border:1px solid rgba(34,197,94,0.2);
+  border-radius:var(--r);padding:24px;margin-bottom:20px;
+  display:flex;align-items:center;gap:20px;
+}
+.th-icon{font-size:44px;}
+.th-body{flex:1;}
+.th-title{font-size:20px;font-weight:900;margin-bottom:5px;}
+.th-desc{font-size:13px;color:var(--text2);line-height:1.6;}
+.th-badge{
+  background:var(--green-dim);border:1px solid rgba(34,197,94,0.25);
+  border-radius:10px;padding:10px 16px;text-align:center;
+  white-space:nowrap;
+}
+.th-badge-val{font-size:20px;font-weight:900;color:var(--green);}
+.th-badge-lbl{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+
+/* Trigger flow */
+.trigger-flow{
+  display:flex;align-items:stretch;gap:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:20px;
+}
+.tf-step{
+  flex:1;padding:20px 16px;text-align:center;
+  position:relative;border-right:1px solid var(--border);
+  transition:background .2s;cursor:default;
+}
+.tf-step:last-child{border-right:none;}
+.tf-step.active-step{background:var(--amber-glow);}
+.tf-step.done-step{background:rgba(34,197,94,0.04);}
+.tf-icon{font-size:26px;margin-bottom:8px;}
+.tf-title{font-size:12px;font-weight:800;margin-bottom:4px;}
+.tf-desc{font-size:10px;color:var(--text3);line-height:1.4;}
+.tf-time{font-size:9px;font-family:'IBM Plex Mono',monospace;margin-top:6px;}
+.tf-step.done-step .tf-time{color:var(--green);}
+.tf-step.active-step .tf-time{color:var(--amber);}
+.tf-arrow{
+  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  z-index:2;font-size:14px;color:var(--text3);
+}
+
+/* Rules builder */
+.rules-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:20px;
+}
+.rules-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.rules-title{font-size:14px;font-weight:800;}
+.rules-add{background:var(--amber);color:#0A0700;border:none;border-radius:8px;padding:7px 16px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;cursor:pointer;}
+
+.rule-row{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+}
+.rule-row:last-child{border-bottom:none;}
+.rule-trigger{
+  background:var(--green-dim);border:1px solid rgba(34,197,94,0.2);
+  border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--green);
+  white-space:nowrap;
+}
+.rule-arrow-sm{color:var(--text3);font-size:16px;}
+.rule-action{
+  background:var(--amber-dim);border:1px solid rgba(240,180,41,0.2);
+  border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--amber);
+  white-space:nowrap;
+}
+.rule-via{
+  background:var(--blue-dim);border:1px solid rgba(96,165,250,0.2);
+  border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:var(--blue);
+  white-space:nowrap;
+}
+.rule-to{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--text2);
+  flex:1;
+}
+.rule-toggle{
+  width:40px;height:22px;border-radius:11px;cursor:pointer;
+  position:relative;transition:background .2s;flex-shrink:0;border:none;
+}
+.rule-toggle.on{background:var(--green);}
+.rule-toggle.off{background:var(--surface3);}
+.rule-toggle::after{
+  content:'';position:absolute;top:3px;width:16px;height:16px;
+  border-radius:50%;background:white;transition:left .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.rule-toggle.on::after{left:21px;}
+.rule-toggle.off::after{left:3px;}
+
+/* ── DOCUMENT COMPOSER PANEL ── */
+.composer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+@media(max-width:800px){.composer-grid{grid-template-columns:1fr;}}
+
+.composer-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.cc-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cc-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.cc-badge{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:700;padding:2px 10px;border-radius:100px;}
+.cc-badge.dgi{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,180,41,0.25);}
+.cc-badge.auto{background:var(--green-dim);color:var(--green);}
+
+/* Invoice preview */
+.invoice-doc{
+  margin:16px;background:white;border-radius:10px;
+  overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  font-family:'IBM Plex Mono',monospace;
+  color:#1A1A2E;
+}
+.inv-head{
+  background:linear-gradient(135deg,#1A1A2E,#2D2D4E);
+  padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;
+}
+.inv-brand{color:white;}
+.inv-brand-name{font-size:16px;font-weight:700;letter-spacing:-0.3px;font-family:'Outfit',sans-serif;}
+.inv-brand-ice{font-size:9px;opacity:0.5;margin-top:2px;}
+.inv-meta{text-align:right;color:white;}
+.inv-num{font-size:11px;font-weight:600;color:var(--amber);}
+.inv-date{font-size:9px;opacity:0.5;margin-top:2px;}
+.inv-dgi-stamp{
+  background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);
+  border-radius:4px;padding:2px 8px;font-size:8px;color:#22C55E;
+  margin-top:4px;display:inline-block;
+}
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #E8E8EE;}
+.inv-party{padding:12px 14px;font-size:9px;}
+.inv-party:first-child{border-right:1px solid #E8E8EE;}
+.inv-party-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9090A0;margin-bottom:4px;}
+.inv-party-name{font-size:11px;font-weight:700;color:#1A1A2E;margin-bottom:2px;}
+.inv-party-detail{font-size:9px;color:#6060707;}
+.inv-lines{padding:0 14px;}
+.inv-line-head{display:grid;grid-template-columns:1fr 50px 70px;gap:4px;padding:8px 0 6px;border-bottom:2px solid #E8E8EE;font-size:8px;font-weight:700;text-transform:uppercase;color:#9090A0;}
+.inv-line{display:grid;grid-template-columns:1fr 50px 70px;gap:4px;padding:7px 0;border-bottom:1px solid #F0F0F5;font-size:9px;color:#2A2A3E;align-items:center;}
+.inv-totals{padding:10px 14px 14px;}
+.inv-total-row{display:flex;justify-content:space-between;font-size:9px;padding:3px 0;color:#6060707;}
+.inv-total-row.main{font-size:11px;font-weight:700;color:#1A1A2E;border-top:2px solid #E8E8EE;padding-top:7px;margin-top:3px;}
+.inv-total-row.main span:last-child{color:#D4920A;}
+.inv-footer{padding:10px 14px;background:#F8F8FC;border-top:1px solid #E8E8EE;font-size:8px;color:#9090A0;display:flex;justify-content:space-between;align-items:center;}
+.inv-qr{width:28px;height:28px;background:#1A1A2E;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+
+/* Waybill preview */
+.waybill-doc{
+  margin:16px;background:white;border-radius:10px;
+  overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  color:#1A1A2E;
+}
+.wb-header{
+  background:linear-gradient(135deg,#0A2A1A,#0E3520);
+  padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+}
+.wb-title-area{}
+.wb-title{font-size:14px;font-weight:900;color:white;font-family:'Outfit',sans-serif;}
+.wb-subtitle{font-size:9px;color:rgba(255,255,255,0.4);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+.wb-num{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--green);background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:4px;padding:3px 10px;}
+.wb-route-bar{
+  display:flex;align-items:center;padding:12px 16px;gap:10px;
+  border-bottom:2px solid #E8E8EE;background:#FAFAFA;
+}
+.wb-city{font-size:13px;font-weight:800;font-family:'Outfit',sans-serif;color:#1A1A2E;}
+.wb-arrow{font-size:16px;color:#D4920A;}
+.wb-dist{font-size:10px;color:#9090A0;font-family:'IBM Plex Mono',monospace;margin-left:auto;}
+.wb-grid{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #E8E8EE;}
+.wb-field{padding:10px 14px;border-right:1px solid #E8E8EE;}
+.wb-field:nth-child(2n){border-right:none;}
+.wb-field:nth-child(n+3){border-top:1px solid #E8E8EE;}
+.wb-label{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#9090A0;font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+.wb-value{font-size:11px;font-weight:700;color:#1A1A2E;font-family:'IBM Plex Mono',monospace;}
+.wb-gps-track{
+  padding:10px 14px;background:#F0FFF5;border-bottom:1px solid #E8E8EE;
+  display:flex;align-items:center;gap:8px;
+}
+.wb-gps-dot{width:6px;height:6px;border-radius:50%;background:#22C55E;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+.wb-gps-text{font-size:10px;font-weight:700;color:#22C55E;font-family:'IBM Plex Mono',monospace;}
+.wb-gps-coords{font-size:9px;color:#9090A0;font-family:'IBM Plex Mono',monospace;margin-left:auto;}
+.wb-sigs{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:2px solid #E8E8EE;}
+.wb-sig{padding:10px 12px;border-right:1px solid #E8E8EE;text-align:center;}
+.wb-sig:last-child{border-right:none;}
+.wb-sig-label{font-size:8px;text-transform:uppercase;letter-spacing:0.5px;color:#9090A0;font-family:'IBM Plex Mono',monospace;margin-bottom:6px;}
+.wb-sig-line{height:20px;border-bottom:1px dashed #CCCCDD;margin-bottom:4px;}
+.wb-sig-name{font-size:9px;color:#6060707;font-family:'IBM Plex Mono',monospace;}
+.wb-sig.confirmed .wb-sig-line{border-bottom:2px solid #22C55E;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 20'%3E%3Cpath d='M5 15 Q15 5 25 12 Q35 18 45 8 Q50 4 55 10' stroke='%2322C55E' stroke-width='2' fill='none'/%3E%3C/svg%3E") no-repeat center;}
+
+/* Dispatch settings */
+.dispatch-settings{
+  margin:16px;
+}
+.ds-section{margin-bottom:14px;}
+.ds-label{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.8px;font-family:'IBM Plex Mono',monospace;margin-bottom:8px;}
+.ds-recipients{display:flex;flex-direction:column;gap:6px;}
+.ds-recipient{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:10px 12px;
+}
+.ds-r-type{
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;
+}
+.ds-r-type.email{background:var(--blue-dim);}
+.ds-r-type.sms{background:var(--green-dim);}
+.ds-r-type.whatsapp{background:rgba(37,211,102,0.1);}
+.ds-r-body{flex:1;}
+.ds-r-name{font-size:12px;font-weight:700;}
+.ds-r-contact{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.ds-r-docs{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.ds-r-doc{background:var(--amber-dim);color:var(--amber);border-radius:4px;padding:1px 7px;font-size:9px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
+.ds-r-doc.wb{background:var(--green-dim);color:var(--green);}
+.ds-r-doc.sms-doc{background:var(--blue-dim);color:var(--blue);}
+.ds-r-toggle{width:36px;height:20px;border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none;}
+.ds-r-toggle.on{background:var(--green);}
+.ds-r-toggle.off{background:var(--surface3);}
+.ds-r-toggle::after{content:'';position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:white;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.ds-r-toggle.on::after{left:18px;}
+.ds-r-toggle.off::after{left:2px;}
+
+/* ── DISPATCH LOG PANEL ── */
+.log-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.log-filter{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;color:var(--text3);cursor:pointer;transition:all .2s;}
+.log-filter.active{background:var(--amber-dim);border-color:rgba(240,180,41,0.3);color:var(--amber);}
+
+.log-table{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.log-table-header{
+  display:grid;grid-template-columns:120px 1fr 120px 100px 90px 80px;
+  gap:0;padding:11px 16px;background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.6px;font-family:'IBM Plex Mono',monospace;
+}
+.log-row{
+  display:grid;grid-template-columns:120px 1fr 120px 100px 90px 80px;
+  gap:0;padding:13px 16px;border-bottom:1px solid var(--border);
+  align-items:center;cursor:pointer;transition:background .15s;
+}
+.log-row:last-child{border-bottom:none;}
+.log-row:hover{background:rgba(255,255,255,0.02);}
+.log-time{font-size:11px;font-weight:700;color:var(--text2);font-family:'IBM Plex Mono',monospace;}
+.log-doc{display:flex;flex-direction:column;gap:3px;}
+.log-doc-name{font-size:12px;font-weight:700;}
+.log-doc-ref{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.log-recipient{font-size:11px;color:var(--text2);}
+.log-channel{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;}
+.log-status{display:inline-flex;align-items:center;gap:4px;border-radius:100px;padding:3px 10px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+.log-status.delivered{background:var(--green-dim);color:var(--green);}
+.log-status.sent{background:var(--amber-dim);color:var(--amber);}
+.log-status.failed{background:var(--red-dim);color:var(--red);}
+.log-status.pending{background:rgba(255,255,255,0.06);color:var(--text3);}
+.log-actions{display:flex;gap:4px;}
+.log-btn{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;cursor:pointer;color:var(--text2);font-family:'Outfit',sans-serif;transition:all .2s;}
+.log-btn:hover{border-color:var(--amber);color:var(--amber);}
+
+/* ── SMS TEMPLATE PANEL ── */
+.sms-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:800px){.sms-grid{grid-template-columns:1fr;}}
+
+.template-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.tc-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.tc-title{font-size:13px;font-weight:800;}
+.tc-trigger{font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;}
+.tc-body{padding:16px 18px;}
+
+/* Phone mockup for SMS */
+.sms-phone{
+  background:#1A1A1A;border-radius:20px;padding:14px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.06);
+}
+.sms-header-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.sms-contact-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sms-contact-dot.triqlog{background:linear-gradient(135deg,var(--amber),#B07010);}
+.sms-contact-name{font-size:11px;font-weight:700;color:rgba(255,255,255,0.8);}
+.sms-contact-num{font-size:9px;color:rgba(255,255,255,0.3);font-family:'IBM Plex Mono',monospace;}
+.sms-bubble{
+  background:#2A2A2A;border-radius:4px 14px 14px 14px;
+  padding:10px 12px;font-size:11px;color:rgba(255,255,255,0.85);
+  line-height:1.55;margin-bottom:6px;
+}
+.sms-bubble.outgoing{
+  background:linear-gradient(135deg,#1E6032,#186028);
+  border-radius:14px 4px 14px 14px;margin-left:20px;
+}
+.sms-time{font-size:9px;color:rgba(255,255,255,0.25);text-align:right;font-family:'IBM Plex Mono',monospace;}
+.sms-link{color:var(--amber);text-decoration:underline;}
+
+/* Email mockup */
+.email-mock{
+  background:white;border-radius:10px;overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+}
+.em-bar{background:#F8F8FA;padding:10px 14px;border-bottom:1px solid #E8E8EE;}
+.em-field{font-size:10px;color:#9090A0;padding:2px 0;font-family:'IBM Plex Mono',monospace;}
+.em-field strong{color:#4040507;}
+.em-body{padding:16px 18px;}
+.em-greeting{font-size:13px;font-weight:700;color:#1A1A2E;margin-bottom:8px;font-family:'Outfit',sans-serif;}
+.em-text{font-size:11px;color:#4A4A5A;line-height:1.6;margin-bottom:10px;font-family:'Outfit',sans-serif;}
+.em-attachments{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+.em-attach{
+  background:#F0F8FF;border:1px solid #C0D8F0;
+  border-radius:8px;padding:8px 12px;
+  display:flex;align-items:center;gap:6px;
+  font-size:10px;color:#3060A0;font-weight:700;cursor:pointer;
+}
+.em-cta{
+  display:block;background:linear-gradient(135deg,#1A1A2E,#2D2D4E);
+  color:white;text-align:center;padding:10px;border-radius:8px;
+  font-size:11px;font-weight:800;text-decoration:none;margin-bottom:8px;
+  font-family:'Outfit',sans-serif;
+}
+.em-footer{font-size:9px;color:#AAAABC;text-align:center;font-family:'IBM Plex Mono',monospace;}
+
+/* ── LIVE DEMO ── */
+.demo-section{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:20px;
+}
+.demo-header{
+  padding:16px 20px;background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.demo-title{font-size:14px;font-weight:800;}
+.demo-trigger-btn{
+  background:linear-gradient(135deg,var(--amber),#C07A10);
+  color:#0A0600;border:none;border-radius:10px;padding:9px 20px;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;gap:7px;transition:all .2s;
+}
+.demo-trigger-btn:active{transform:scale(0.97);}
+
+.demo-timeline{padding:20px;}
+.demo-event{
+  display:flex;gap:14px;padding-bottom:18px;position:relative;
+  opacity:0.3;transition:opacity .4s;
+}
+.demo-event.fired{opacity:1;}
+.demo-event:not(:last-child)::before{content:'';position:absolute;left:16px;top:34px;bottom:0;width:2px;background:var(--border);}
+.demo-event.fired:not(:last-child)::before{background:var(--green);}
+.de-circle{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+  flex-shrink:0;background:var(--surface2);border:2px solid var(--border2);z-index:1;
+}
+.demo-event.fired .de-circle{background:var(--green);border-color:var(--green);}
+.de-body{flex:1;padding-top:4px;}
+.de-title{font-size:13px;font-weight:800;margin-bottom:3px;}
+.de-detail{font-size:11px;color:var(--text3);}
+.de-time{font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text3);margin-top:4px;}
+.demo-event.fired .de-time{color:var(--green);}
+
+/* ── MISC ── */
+.info-note{
+  border-radius:var(--r-sm);padding:12px 14px;
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:13px;margin-bottom:16px;
+}
+.info-note.amber{background:var(--amber-glow);border:1px solid rgba(240,180,41,0.18);}
+.info-note.green{background:var(--green-dim);border:1px solid rgba(34,197,94,0.18);}
+.info-note.blue{background:var(--blue-dim);border:1px solid rgba(96,165,250,0.18);}
+.info-note.teal{background:var(--teal-dim);border:1px solid rgba(45,212,191,0.18);}
+.in-icon{font-size:18px;flex-shrink:0;}
+.in-text{color:var(--text2);line-height:1.55;}
+.in-text strong{color:var(--text);}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:999;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-left:3px solid var(--green);border-radius:12px;
+  padding:14px 18px;box-shadow:var(--shadow-lg);
+  transform:translateX(120%);opacity:0;transition:all .35s ease;
+  max-width:320px;
+}
+.toast.show{transform:translateX(0);opacity:1;}
+.toast-title{font-weight:800;font-size:13px;color:var(--green);margin-bottom:3px;}
+.toast-body{font-size:12px;color:var(--text2);}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="ph-left">
+      <div class="ph-logo">📨</div>
+      <div>
+        <div class="ph-title">Shahi<span>Log</span> — Auto-Dispatch</div>
+        <div class="ph-sub">Factures · LDC · SMS · Email · DGI · Automatique</div>
+      </div>
+    </div>
+    <div class="ph-right">
+      <div class="ph-stat">
+        <div class="ph-stat-val" style="color:var(--green);">247</div>
+        <div class="ph-stat-lbl">Envoyés aujourd'hui</div>
+      </div>
+      <div class="ph-stat">
+        <div class="ph-stat-val" style="color:var(--amber);">99.1%</div>
+        <div class="ph-stat-lbl">Taux livraison</div>
+      </div>
+      <div class="ph-stat">
+        <div class="ph-stat-val" style="color:var(--teal);">1.4s</div>
+        <div class="ph-stat-lbl">Délai moyen</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('triggers',this)">⚡ Déclencheurs <span class="tab-badge green">7 actifs</span></button>
+    <button class="tab" onclick="switchTab('documents',this)">📄 Documents <span class="tab-badge amber">2 types</span></button>
+    <button class="tab" onclick="switchTab('templates',this)">💬 SMS · Email</button>
+    <button class="tab" onclick="switchTab('log',this)">📋 Journal d'envoi <span class="tab-badge">247</span></button>
+    <button class="tab" onclick="switchTab('demo',this)">🎬 Démo live</button>
+  </div>
+
+  <!-- ═══════════════════════════════
+       PANEL: TRIGGERS
+  ═══════════════════════════════ -->
+  <div id="panel-triggers" class="panel active">
+
+    <div class="trigger-hero">
+      <div class="th-icon">🤖</div>
+      <div class="th-body">
+        <div class="th-title">Envoi automatique — Zéro action manuelle</div>
+        <div class="th-desc">Chaque événement GPS ou financier déclenche automatiquement la génération et l'envoi des documents. Le chauffeur n'a rien à faire. Le chargeur reçoit tout en temps réel. Le DGI reçoit sa facture.</div>
+      </div>
+      <div class="th-badge">
+        <div class="th-badge-val">1.4s</div>
+        <div class="th-badge-lbl">Du GPS à l'email</div>
+      </div>
+    </div>
+
+    <!-- Trigger flow visualization -->
+    <div class="trigger-flow">
+      <div class="tf-step done-step">
+        <div class="tf-arrow">›</div>
+        <div class="tf-icon">📍</div>
+        <div class="tf-title">GPS Événement</div>
+        <div class="tf-desc">Départ · Arrivée · Anomalie · Retard</div>
+        <div class="tf-time">✓ Temps réel</div>
+      </div>
+      <div class="tf-step done-step">
+        <div class="tf-arrow">›</div>
+        <div class="tf-icon">🤖</div>
+        <div class="tf-title">Génération doc</div>
+        <div class="tf-desc">Facture DGI ou LDC créée avec toutes les données du lot</div>
+        <div class="tf-time">✓ &lt; 0.3s</div>
+      </div>
+      <div class="tf-step active-step">
+        <div class="tf-arrow">›</div>
+        <div class="tf-icon">📤</div>
+        <div class="tf-title">Dispatch canal</div>
+        <div class="tf-desc">Email PDF + SMS lien + WhatsApp selon préférence</div>
+        <div class="tf-time">→ &lt; 1.4s total</div>
+      </div>
+      <div class="tf-step">
+        <div class="tf-arrow">›</div>
+        <div class="tf-icon">✅</div>
+        <div class="tf-title">Confirmation</div>
+        <div class="tf-desc">Accusé de réception · Log · Retry si échec</div>
+        <div class="tf-time">Automatique</div>
+      </div>
+      <div class="tf-step">
+        <div class="tf-icon">🏛️</div>
+        <div class="tf-title">DGI soumis</div>
+        <div class="tf-desc">Portail DGI e-invoice 2026 · ICE · TVA</div>
+        <div class="tf-time">Même cycle</div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div class="rules-card">
+      <div class="rules-header">
+        <div class="rules-title">Règles d'automatisation actives</div>
+        <button class="rules-add" onclick="showToast('➕ Règle','Éditeur de règle ouvert.')">+ Nouvelle règle</button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">📍 GPS Départ confirmé</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">📄 LDC Expédition</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">📧 Email + 💬 SMS</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chargeur + Chauffeur</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">✅ GPS Livraison ≤500m</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">🧾 Facture DGI</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">📧 Email PDF</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chargeur + Portail DGI</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">✅ GPS Livraison ≤500m</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">📄 LDC Livraison signée</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">💬 SMS lien</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chargeur + Destinataire</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">💳 50% paiement reçu</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">🧾 Reçu de paiement</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">📱 WhatsApp</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chauffeur</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">⚠️ Retard &gt; 30 min GPS</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">📲 Alerte retard</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">💬 SMS</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chargeur</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">📋 Lot accepté</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">📑 Ordre de mission</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">📧 Email</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Chauffeur</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+      <div class="rule-row">
+        <div class="rule-trigger">🧾 Facture DGI générée</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-action">🏛️ Soumission DGI</div>
+        <div class="rule-arrow-sm">via</div>
+        <div class="rule-via">🌐 API DGI</div>
+        <div class="rule-arrow-sm">→</div>
+        <div class="rule-to">Direction Générale des Impôts</div>
+        <button class="rule-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+      </div>
+
+    </div>
+
+    <div class="info-note teal">
+      <div class="in-icon">🔄</div>
+      <div class="in-text"><strong>Retry automatique :</strong> Si un SMS échoue (numéro hors réseau, boîte pleine), le système retente 3 fois à 5, 15 et 60 minutes. Si l'email bounced, bascule automatiquement sur WhatsApp. Aucune intervention humaine requise.</div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════
+       PANEL: DOCUMENTS
+  ═══════════════════════════════ -->
+  <div id="panel-documents" class="panel">
+    <div class="composer-grid">
+
+      <!-- Invoice -->
+      <div class="composer-card">
+        <div class="cc-header">
+          <div class="cc-title">🧾 Facture — Lettre de Voiture <div class="cc-badge dgi">DGI 2026</div></div>
+          <div class="cc-badge auto">AUTO</div>
+        </div>
+        <div class="invoice-doc">
+          <div class="inv-head">
+            <div class="inv-brand">
+              <div class="inv-brand-name">🚛 TriqLog</div>
+              <div class="inv-brand-ice">ICE: 002847300000041 · IF: 53200147</div>
+            </div>
+            <div class="inv-meta">
+              <div class="inv-num">INV-2026-0441</div>
+              <div class="inv-date">05/04/2026 · 12:47:33</div>
+              <div class="inv-dgi-stamp">✓ DGI CONFORME</div>
+            </div>
+          </div>
+          <div class="inv-parties">
+            <div class="inv-party">
+              <div class="inv-party-label">Émetteur / Transporteur</div>
+              <div class="inv-party-name">TriqLog SARL</div>
+              <div class="inv-party-detail" style="color:#606070;font-size:9px;">RC: Casa 448721<br>TVA: 20% · Casablanca</div>
+            </div>
+            <div class="inv-party">
+              <div class="inv-party-label">Chargeur / Destinataire</div>
+              <div class="inv-party-name">Stellantis Maroc SA</div>
+              <div class="inv-party-detail" style="color:#606070;font-size:9px;">ICE: 001738200000012<br>RC: 123456 · Casablanca</div>
+            </div>
+          </div>
+          <div class="inv-lines">
+            <div class="inv-line-head"><span>Désignation</span><span>Qté</span><span>Montant</span></div>
+            <div class="inv-line"><span>Transport routier Tanger Med → Casablanca ZI (23T)</span><span>1</span><span>29,830</span></div>
+            <div class="inv-line"><span>Suivi GPS temps réel</span><span>1</span><span>Inclus</span></div>
+            <div class="inv-line"><span>Assurance cargo (groupe)</span><span>1</span><span>Inclus</span></div>
+          </div>
+          <div class="inv-totals">
+            <div class="inv-total-row"><span>Montant HT</span><span>29,830 MAD</span></div>
+            <div class="inv-total-row"><span>TVA 20%</span><span>4,970 MAD</span></div>
+            <div class="inv-total-row"><span>Timbre fiscal</span><span>20 MAD</span></div>
+            <div class="inv-total-row main"><span>TOTAL TTC</span><span>34,820 MAD</span></div>
+          </div>
+          <div class="inv-footer">
+            <span>Chauffeur: Hassan Benali · CIN: BJ224891 · MA-TRUCK-1204</span>
+            <div class="inv-qr">⬛</div>
+          </div>
+        </div>
+        <div class="dispatch-settings">
+          <div class="ds-section">
+            <div class="ds-label">Envoyée automatiquement à :</div>
+            <div class="ds-recipients">
+              <div class="ds-recipient">
+                <div class="ds-r-type email">📧</div>
+                <div class="ds-r-body">
+                  <div class="ds-r-name">Stellantis Maroc — Comptabilité</div>
+                  <div class="ds-r-contact"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="36505f5857585553764542535a5a5758425f451b5b571855595b">[email&#160;protected]</a></div>
+                  <div class="ds-r-docs"><div class="ds-r-doc">PDF Facture</div><div class="ds-r-doc wb">LDC signée</div></div>
+                </div>
+                <button class="ds-r-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+              </div>
+              <div class="ds-recipient">
+                <div class="ds-r-type whatsapp">📱</div>
+                <div class="ds-r-body">
+                  <div class="ds-r-name">Hassan Benali — Chauffeur</div>
+                  <div class="ds-r-contact">+212 6 61 xx xx xx</div>
+                  <div class="ds-r-docs"><div class="ds-r-doc">Reçu paiement</div><div class="ds-r-doc sms-doc">Confirmation</div></div>
+                </div>
+                <button class="ds-r-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+              </div>
+              <div class="ds-recipient">
+                <div class="ds-r-type email">🏛️</div>
+                <div class="ds-r-body">
+                  <div class="ds-r-name">DGI — Portail e-invoice</div>
+                  <div class="ds-r-contact">api.dgi.ma/einvoice/submit</div>
+                  <div class="ds-r-docs"><div class="ds-r-doc">XML DGI</div><div class="ds-r-doc wb">Accusé</div></div>
+                </div>
+                <button class="ds-r-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waybill / LDC -->
+      <div class="composer-card">
+        <div class="cc-header">
+          <div class="cc-title">📄 Lettre de Voiture (LDC / CMR) <div class="cc-badge auto">AUTO</div></div>
+        </div>
+        <div class="waybill-doc">
+          <div class="wb-header">
+            <div class="wb-title-area">
+              <div class="wb-title">LETTRE DE VOITURE</div>
+              <div class="wb-subtitle">BON DE TRANSPORT · TRIQLOG SARL</div>
+            </div>
+            <div class="wb-num">LDC-8821-0406</div>
+          </div>
+          <div class="wb-route-bar">
+            <div class="wb-city">Tanger Med</div>
+            <div class="wb-arrow">→</div>
+            <div class="wb-city">Casablanca ZI</div>
+            <div class="wb-dist">340 km · 23T · LOT-8821</div>
+          </div>
+          <div class="wb-grid">
+            <div class="wb-field"><div class="wb-label">Chargeur</div><div class="wb-value">Stellantis Maroc</div></div>
+            <div class="wb-field"><div class="wb-label">Destinataire</div><div class="wb-value">Stellantis Casa ZI</div></div>
+            <div class="wb-field"><div class="wb-label">Chauffeur</div><div class="wb-value">H. Benali · BJ224891</div></div>
+            <div class="wb-field"><div class="wb-label">Immatriculation</div><div class="wb-value">MA 24-7712 B</div></div>
+            <div class="wb-field"><div class="wb-label">Nature marchandise</div><div class="wb-value">Pièces auto</div></div>
+            <div class="wb-field"><div class="wb-label">Poids brut</div><div class="wb-value">23,000 kg</div></div>
+            <div class="wb-field"><div class="wb-label">Départ</div><div class="wb-value">06/04 · 07:32</div></div>
+            <div class="wb-field"><div class="wb-label">Livraison prévue</div><div class="wb-value">06/04 · 14:00</div></div>
+          </div>
+          <div class="wb-gps-track">
+            <div class="wb-gps-dot"></div>
+            <div class="wb-gps-text">SUIVI GPS ACTIF</div>
+            <div class="wb-gps-coords">31.9241°N · 6.3497°W · 74 km/h</div>
+          </div>
+          <div class="wb-sigs">
+            <div class="wb-sig confirmed">
+              <div class="wb-sig-label">Expéditeur</div>
+              <div class="wb-sig-line"></div>
+              <div class="wb-sig-name">✓ GPS · 07:32</div>
+            </div>
+            <div class="wb-sig confirmed">
+              <div class="wb-sig-label">Transporteur</div>
+              <div class="wb-sig-line"></div>
+              <div class="wb-sig-name">H. Benali · App</div>
+            </div>
+            <div class="wb-sig">
+              <div class="wb-sig-label">Destinataire</div>
+              <div class="wb-sig-line"></div>
+              <div class="wb-sig-name">En attente GPS</div>
+            </div>
+          </div>
+        </div>
+        <div class="dispatch-settings">
+          <div class="ds-section">
+            <div class="ds-label">Envoyée automatiquement à :</div>
+            <div class="ds-recipients">
+              <div class="ds-recipient">
+                <div class="ds-r-type email">📧</div>
+                <div class="ds-r-body">
+                  <div class="ds-r-name">Stellantis Maroc — Logistique</div>
+                  <div class="ds-r-contact"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8ce0e3ebe5fff8e5efffccfff8e9e0e0ede2f8e5ffa1e1eda2efe3e1">[email&#160;protected]</a></div>
+                  <div class="ds-r-docs"><div class="ds-r-doc wb">LDC PDF</div><div class="ds-r-doc sms-doc">Tracking link</div></div>
+                </div>
+                <button class="ds-r-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+              </div>
+              <div class="ds-recipient">
+                <div class="ds-r-type sms">💬</div>
+                <div class="ds-r-body">
+                  <div class="ds-r-name">Responsable réception</div>
+                  <div class="ds-r-contact">+212 6 22 xx xx xx</div>
+                  <div class="ds-r-docs"><div class="ds-r-doc sms-doc">SMS ETA</div><div class="ds-r-doc sms-doc">Lien LDC</div></div>
+                </div>
+                <button class="ds-r-toggle on" onclick="this.classList.toggle('on');this.classList.toggle('off');"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="info-note amber">
+      <div class="in-icon">🔐</div>
+      <div class="in-text"><strong>Signature numérique GPS :</strong> Les champs "Expéditeur" et "Transporteur" sur la LDC sont signés automatiquement par l'événement GPS (coordonnées + horodatage). La signature "Destinataire" est complétée à l'arrivée GPS — <strong>aucun tampon papier requis</strong>. Valeur juridique équivalente au Maroc sous la loi 53-05.</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       PANEL: SMS + EMAIL TEMPLATES
+  ═══════════════════════════════ -->
+  <div id="panel-templates" class="panel">
+    <div class="sms-grid">
+
+      <!-- SMS: Delivery confirmation to shipper -->
+      <div class="template-card">
+        <div class="tc-header">
+          <div class="tc-title">💬 SMS — Livraison confirmée (Chargeur)</div>
+          <div class="tc-trigger">Déclenché : GPS ≤500m</div>
+        </div>
+        <div class="tc-body">
+          <div class="sms-phone">
+            <div class="sms-header-bar">
+              <div class="sms-contact-dot triqlog">🚛</div>
+              <div><div class="sms-contact-name">TriqLog</div><div class="sms-contact-num">+212 5 22 xx xx xx</div></div>
+            </div>
+            <div class="sms-bubble">
+              ✅ <strong>Livraison confirmée</strong><br><br>
+              LOT-8821 · Tanger Med → Casablanca ZI<br>
+              Chauffeur: Hassan Benali<br>
+              Livré: 06/04/2026 à 14:23 (GPS)<br>
+              Poids: 23T · Pièces auto<br><br>
+              📄 Facture + LDC: <span class="sms-link">shl.ma/d/8821</span><br>
+              🧾 DGI soumis: INV-2026-0441<br><br>
+              💳 Paiement 50% libéré: MAD 3,395
+            </div>
+            <div class="sms-time">14:23 · Livré</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMS: Payment receipt to driver -->
+      <div class="template-card">
+        <div class="tc-header">
+          <div class="tc-title">💬 SMS — Paiement reçu (Chauffeur)</div>
+          <div class="tc-trigger">Déclenché : GPS livraison confirmée</div>
+        </div>
+        <div class="tc-body">
+          <div class="sms-phone">
+            <div class="sms-header-bar">
+              <div class="sms-contact-dot triqlog">🚛</div>
+              <div><div class="sms-contact-name">TriqLog</div><div class="sms-contact-num">+212 5 22 xx xx xx</div></div>
+            </div>
+            <div class="sms-bubble">
+              💰 <strong>Votre paiement est libéré</strong><br><br>
+              LOT-8821 · Livraison confirmée GPS ✅<br><br>
+              50% à la prise: MAD 3,395 ✓<br>
+              50% livraison: MAD 3,395 ✓ LIBÉRÉ<br>
+              Frais plateforme (3%): −MAD 210<br>
+              <strong>Net total: MAD 6,790</strong><br><br>
+              💵 Retrait: Agent Cash Béni Mellal<br>
+              Code: <strong>SHL-7723</strong> · Valide 48h<br><br>
+              📄 Reçu: <span class="sms-link">shl.ma/r/8821</span>
+            </div>
+            <div class="sms-time">14:23 · Livré</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMS: Waybill to receiver -->
+      <div class="template-card">
+        <div class="tc-header">
+          <div class="tc-title">💬 SMS — ETA + LDC (Destinataire)</div>
+          <div class="tc-trigger">Déclenché : GPS départ confirmé</div>
+        </div>
+        <div class="tc-body">
+          <div class="sms-phone">
+            <div class="sms-header-bar">
+              <div class="sms-contact-dot triqlog">🚛</div>
+              <div><div class="sms-contact-name">TriqLog</div><div class="sms-contact-num">+212 5 22 xx xx xx</div></div>
+            </div>
+            <div class="sms-bubble">
+              🚛 <strong>Votre livraison est en route</strong><br><br>
+              LOT-8821 · 23T Pièces auto<br>
+              De: Tanger Med<br>
+              Vers: Casablanca ZI (votre site)<br><br>
+              Chauffeur: Hassan Benali<br>
+              Tél: +212 6 61 xx xx xx<br><br>
+              📍 Suivi en temps réel:<br>
+              <span class="sms-link">shl.ma/track/8821</span><br><br>
+              ETA estimée: 06/04 · 14:00<br>
+              📄 LDC: <span class="sms-link">shl.ma/ldc/8821</span>
+            </div>
+            <div class="sms-time">07:33 · Départ</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email: Full invoice email -->
+      <div class="template-card">
+        <div class="tc-header">
+          <div class="tc-title">📧 Email — Facture + LDC (Chargeur)</div>
+          <div class="tc-trigger">Déclenché : GPS livraison ≤500m</div>
+        </div>
+        <div class="tc-body">
+          <div class="email-mock">
+            <div class="em-bar">
+              <div class="em-field"><strong>De:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e98f888a9d9c9b8c9aa99a8188818085868ec78488">[email&#160;protected]</a></div>
+              <div class="em-field"><strong>À:</strong> <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9dfbf4f3fcf3fef8ddeee9f8f1f1fcf3e9f4eeb0f0fcb3fef2f0">[email&#160;protected]</a></div>
+              <div class="em-field"><strong>Objet:</strong> ✅ Livraison confirmée · LOT-8821 · INV-2026-0441 — MAD 34,820</div>
+            </div>
+            <div class="em-body">
+              <div class="em-greeting">Bonjour Stellantis Maroc,</div>
+              <div class="em-text">
+                La livraison du lot <strong>LOT-8821</strong> (Tanger Med → Casablanca ZI, 23T pièces auto) a été <strong>confirmée par GPS</strong> le 06/04/2026 à 14:23.<br><br>
+                Veuillez trouver ci-joint la <strong>facture DGI-conforme</strong> et la <strong>Lettre de Voiture signée</strong>.
+              </div>
+              <div class="em-attachments">
+                <div class="em-attach">📄 INV-2026-0441.pdf <span style="color:#9090A0;font-weight:400;">(34,820 MAD)</span></div>
+                <div class="em-attach">📋 LDC-8821-0406.pdf</div>
+                <div class="em-attach">📍 Rapport GPS.pdf</div>
+              </div>
+              <a class="em-cta" href="#">🔍 Voir le tableau de bord TriqLog</a>
+              <div class="em-footer">
+                TriqLog SARL · ICE 002847300000041 · <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="13757270676661766053607b727b7a7f7c743d7e72">[email&#160;protected]</a><br>
+                Ce document est conforme à la réglementation DGI e-invoicing 2026
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       PANEL: DISPATCH LOG
+  ═══════════════════════════════ -->
+  <div id="panel-log" class="panel">
+    <div class="log-filters">
+      <button class="log-filter active" onclick="filterLog(this,'all')">Tous (247)</button>
+      <button class="log-filter" onclick="filterLog(this,'invoice')">🧾 Factures (89)</button>
+      <button class="log-filter" onclick="filterLog(this,'ldc')">📄 LDC (94)</button>
+      <button class="log-filter" onclick="filterLog(this,'sms')">💬 SMS (48)</button>
+      <button class="log-filter" onclick="filterLog(this,'email')">📧 Email (16)</button>
+      <button class="log-filter" onclick="filterLog(this,'failed')">⚠️ Échecs (2)</button>
+    </div>
+
+    <div class="log-table">
+      <div class="log-table-header">
+        <span>Heure</span><span>Document</span><span>Destinataire</span><span>Canal</span><span>Statut</span><span>Actions</span>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">14:23:41</div>
+        <div class="log-doc"><div class="log-doc-name">🧾 INV-2026-0441</div><div class="log-doc-ref">LOT-8821 · MAD 34,820</div></div>
+        <div class="log-recipient">Stellantis Maroc<br><span style="font-size:10px;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="63050a0d020d0006231017060f0f020d170a104e0e024d000c0e">[email&#160;protected]</a></span></div>
+        <div class="log-channel">📧 Email + PDF</div>
+        <div><span class="log-status delivered">✓ Livré · 1.2s</span></div>
+        <div class="log-actions"><button class="log-btn" onclick="showToast('👁 Aperçu','INV-2026-0441 ouvert.')">Voir</button><button class="log-btn" onclick="showToast('🔁 Renvoyé','Email renvoyé à Stellantis.')">↺</button></div>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">14:23:41</div>
+        <div class="log-doc"><div class="log-doc-name">📄 LDC-8821-0406</div><div class="log-doc-ref">LOT-8821 · Livraison</div></div>
+        <div class="log-recipient">Stellantis — Logistique<br><span style="font-size:10px;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3d51525a544e49545e4e7d4e495851515c5349544e10505c135e5250">[email&#160;protected]</a></span></div>
+        <div class="log-channel">📧 Email + PDF</div>
+        <div><span class="log-status delivered">✓ Livré · 1.4s</span></div>
+        <div class="log-actions"><button class="log-btn" onclick="showToast('👁 Aperçu','LDC-8821 ouvert.')">Voir</button><button class="log-btn">↺</button></div>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">14:23:42</div>
+        <div class="log-doc"><div class="log-doc-name">💬 SMS Livraison</div><div class="log-doc-ref">LOT-8821 · Confirmation</div></div>
+        <div class="log-recipient">Hassan Benali<br><span style="font-size:10px;color:var(--text3);">+212 6 61 xx xx xx</span></div>
+        <div class="log-channel">💬 SMS</div>
+        <div><span class="log-status delivered">✓ Livré · 0.8s</span></div>
+        <div class="log-actions"><button class="log-btn" onclick="showToast('👁 SMS','Code SHL-7723 envoyé à Hassan.')">Voir</button><button class="log-btn">↺</button></div>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">14:23:43</div>
+        <div class="log-doc"><div class="log-doc-name">🏛️ DGI XML Submit</div><div class="log-doc-ref">INV-2026-0441 · ICE auto</div></div>
+        <div class="log-recipient">Portail DGI<br><span style="font-size:10px;color:var(--text3);">api.dgi.ma/einvoice</span></div>
+        <div class="log-channel">🌐 API REST</div>
+        <div><span class="log-status delivered">✓ Accusé · 2.1s</span></div>
+        <div class="log-actions"><button class="log-btn" onclick="showToast('🏛️ DGI','Accusé de réception DGI reçu. Ref: DGI-2026-88210.')">Voir</button><button class="log-btn">↺</button></div>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">07:33:12</div>
+        <div class="log-doc"><div class="log-doc-name">📄 LDC-8821 Départ</div><div class="log-doc-ref">LOT-8821 · Expédition</div></div>
+        <div class="log-recipient">Responsable réception<br><span style="font-size:10px;color:var(--text3);">+212 6 22 xx xx xx</span></div>
+        <div class="log-channel">💬 SMS ETA</div>
+        <div><span class="log-status delivered">✓ Livré · 0.6s</span></div>
+        <div class="log-actions"><button class="log-btn" onclick="showToast('👁 SMS','SMS ETA envoyé au destinataire.')">Voir</button><button class="log-btn">↺</button></div>
+      </div>
+
+      <div class="log-row">
+        <div class="log-time">07:32:58</div>
+        <div class="log-doc"><div class="log-doc-name">📑 Ordre de mission</div><div class="log-doc-ref">LOT-8821 · Accepté</div></div>
+        <div class="log-recipient">Hassan Benali<br><span style="font-size:10px;color:var(--text3);">+212 6 61 xx xx xx</span></div>
+        <div class="log-channel">📧 Email</div>
+        <div><span class="log-status delivered">✓ Livré · 1.1s</span></div>
+        <div class="log-actions"><button class="log-btn">Voir</button><button class="log-btn">↺</button></div>
+      </div>
+
+      <div class="log-row" style="background:rgba(239,68,68,0.03);">
+        <div class="log-time" style="color:var(--red);">09:14:22</div>
+        <div class="log-doc"><div class="log-doc-name">💬 SMS Alerte retard</div><div class="log-doc-ref">LOT-8815 · Retard 45min</div></div>
+        <div class="log-recipient">Cosumar Logistique<br><span style="font-size:10px;color:var(--text3);">+212 6 44 xx xx xx</span></div>
+        <div class="log-channel">💬 SMS</div>
+        <div><span class="log-status failed">✗ Échec · Retry 3/3</span></div>
+        <div class="log-actions"><button class="log-btn" style="border-color:var(--red);color:var(--red);" onclick="showToast('🔁 Retry','Basculé sur email. Envoyé à logistics@cosumar.ma.')">Retry →Email</button></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════
+       PANEL: LIVE DEMO
+  ═══════════════════════════════ -->
+  <div id="panel-demo" class="panel">
+
+    <div class="info-note green">
+      <div class="in-icon">🎬</div>
+      <div class="in-text"><strong>Simulation complète :</strong> Appuyez sur le bouton ci-dessous pour simuler une livraison GPS — regardez les documents se générer et s'envoyer automatiquement, un par un, en temps réel.</div>
+    </div>
+
+    <div class="demo-section">
+      <div class="demo-header">
+        <div class="demo-title">🚛 LOT-8821 · Tanger Med → Casablanca · Hassan Benali</div>
+        <button class="demo-trigger-btn" id="demoBtn" onclick="runDemo()">
+          📍 Simuler arrivée GPS
+        </button>
+      </div>
+      <div class="demo-timeline" id="demoTimeline">
+
+        <div class="demo-event" id="de0">
+          <div class="de-circle">📍</div>
+          <div class="de-body">
+            <div class="de-title">GPS — Arrivée confirmée (≤500m destination)</div>
+            <div class="de-detail">31.6295°N · 7.9811°W · Casablanca Zone Industrielle</div>
+            <div class="de-time" id="de0-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de1">
+          <div class="de-circle">💳</div>
+          <div class="de-body">
+            <div class="de-title">50% livraison libéré — MAD 3,395 → Hassan Benali</div>
+            <div class="de-detail">Virement vers solde TriqLog · Disponible retrait Agent Cash</div>
+            <div class="de-time" id="de1-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de2">
+          <div class="de-circle">🧾</div>
+          <div class="de-body">
+            <div class="de-title">Facture INV-2026-0441 générée — MAD 34,820 TTC</div>
+            <div class="de-detail">ICE Stellantis + ICE TriqLog · TVA 20% calculée · Timbre fiscal</div>
+            <div class="de-time" id="de2-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de3">
+          <div class="de-circle">📄</div>
+          <div class="de-body">
+            <div class="de-title">LDC-8821 complétée — Signature GPS destinataire</div>
+            <div class="de-detail">3ème signature automatique · Coordonnées + horodatage · Loi 53-05</div>
+            <div class="de-time" id="de3-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de4">
+          <div class="de-circle">📧</div>
+          <div class="de-body">
+            <div class="de-title">Email envoyé → <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5137383f303f3234112225343d3d303f2538227c3c307f323e3c">[email&#160;protected]</a></div>
+            <div class="de-detail">Pièces jointes: INV-2026-0441.pdf · LDC-8821.pdf · Rapport-GPS.pdf</div>
+            <div class="de-time" id="de4-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de5">
+          <div class="de-circle">💬</div>
+          <div class="de-body">
+            <div class="de-title">SMS envoyé → +212 6 61 xx xx xx (Hassan Benali)</div>
+            <div class="de-detail">"💰 MAD 6,790 net libéré. Code retrait: SHL-7723. Reçu: shl.ma/r/8821"</div>
+            <div class="de-time" id="de5-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de6">
+          <div class="de-circle">💬</div>
+          <div class="de-body">
+            <div class="de-title">SMS envoyé → +212 5 22 xx xx xx (Stellantis Réception)</div>
+            <div class="de-detail">"✅ LOT-8821 livré 14:23. Facture + LDC: shl.ma/d/8821"</div>
+            <div class="de-time" id="de6-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de7">
+          <div class="de-circle">🏛️</div>
+          <div class="de-body">
+            <div class="de-title">DGI — INV-2026-0441 soumise au portail e-invoice</div>
+            <div class="de-detail">XML DGI · Accusé de réception: DGI-2026-88210 · TVA enregistrée</div>
+            <div class="de-time" id="de7-time">En attente…</div>
+          </div>
+        </div>
+
+        <div class="demo-event" id="de8">
+          <div class="de-circle">✅</div>
+          <div class="de-body">
+            <div class="de-title">Cycle complet — Tout envoyé en 4.2 secondes</div>
+            <div class="de-detail">8 actions automatiques · 0 intervention humaine · Lot archivé</div>
+            <div class="de-time" id="de8-time">En attente…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="info-note amber">
+      <div class="in-icon">⚡</div>
+      <div class="in-text">
+        <strong>Ce qui vient de se passer en 4.2 secondes :</strong> Le chauffeur n'a rien fait. Le chargeur n'a rien fait. Le DGI a reçu sa facture. Le chauffeur a son code de retrait. Le responsable réception sait que le camion est arrivé. Tout cela déclenché par <strong>un point GPS</strong>.
+      </div>
+    </div>
+  </div>
+
+</div><!-- page -->
+
+<!-- Toast -->
+<div class="toast" id="toastEl">
+  <div class="toast-title" id="tTitle"></div>
+  <div class="toast-body" id="tBody"></div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── Tabs ──
+function switchTab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Toast ──
+function showToast(title, body) {
+  const el = document.getElementById('toastEl');
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tBody').textContent = body;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ── Log filter ──
+function filterLog(btn, type) {
+  document.querySelectorAll('.log-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showToast('🔍 Filtre', 'Affichage: ' + btn.textContent.trim());
+}
+
+// ── Live demo ──
+let demoRunning = false;
+function runDemo() {
+  if (demoRunning) return;
+  demoRunning = true;
+  const btn = document.getElementById('demoBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ En cours…';
+
+  // Reset all events
+  for (let i = 0; i <= 8; i++) {
+    const el = document.getElementById('de' + i);
+    if (el) {
+      el.classList.remove('fired');
+      document.getElementById('de' + i + '-time').textContent = 'En attente…';
+    }
+  }
+
+  const events = [
+    { id: 0, delay: 300,  time: '14:23:41.000', label: '✓ GPS confirmé' },
+    { id: 1, delay: 700,  time: '14:23:41.412', label: '✓ Libéré' },
+    { id: 2, del

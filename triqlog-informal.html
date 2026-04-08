@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TriqLog — Driver Onboarding</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0F1117;
+  --bg2: #171B26;
+  --bg3: #1E2330;
+  --surface: #242938;
+  --surface2: #2C3144;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+
+  --amber: #F5A623;
+  --amber-dim: rgba(245,166,35,0.15);
+  --amber-glow: rgba(245,166,35,0.08);
+  --green: #3DDC97;
+  --green-dim: rgba(61,220,151,0.12);
+  --red: #FF6B6B;
+  --red-dim: rgba(255,107,107,0.12);
+  --blue: #60A5FA;
+  --blue-dim: rgba(96,165,250,0.1);
+
+  --text: #F0F2F8;
+  --text2: #9BA3BC;
+  --text3: #5C6480;
+
+  --radius: 14px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ambient glow */
+body::before {
+  content: '';
+  position: fixed; top: -200px; left: -200px;
+  width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,166,35,0.06) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed; bottom: -200px; right: -200px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(61,220,151,0.04) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { position: relative; z-index: 1; display: flex; height: 100vh; overflow: hidden; }
+
+/* ─── LEFT SIDEBAR (Navigation) ─── */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  padding: 28px 0;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.logo-icon { font-size: 28px; }
+.logo-name { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; }
+.logo-name span { color: var(--amber); }
+.logo-tagline { font-size: 11px; color: var(--text3); font-family: 'Noto Sans Arabic', sans-serif; margin-top: 2px; }
+
+.nav-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text3);
+  padding: 0 24px; margin-bottom: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 24px; cursor: pointer;
+  transition: background .15s, color .15s;
+  color: var(--text2); font-size: 14px; font-weight: 500;
+  position: relative;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.nav-item.active { color: var(--amber); background: var(--amber-dim); }
+.nav-item.active::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--amber); border-radius: 0 2px 2px 0;
+}
+.nav-icon { font-size: 16px; width: 20px; text-align: center; }
+.nav-badge {
+  margin-left: auto; background: var(--amber); color: var(--bg);
+  border-radius: 100px; padding: 2px 8px; font-size: 10px; font-weight: 800;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.nav-badge.green { background: var(--green); }
+.nav-badge.red { background: var(--red); }
+
+.sidebar-section { margin-bottom: 28px; }
+
+/* Driver card at bottom of sidebar */
+.driver-card {
+  margin-top: auto; padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.driver-mini { display: flex; align-items: center; gap: 10px; }
+.driver-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--amber), #C07A10);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.driver-mini-name { font-size: 14px; font-weight: 700; }
+.driver-mini-status { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.driver-tier {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: var(--amber-dim); color: var(--amber);
+  border-radius: 100px; padding: 2px 9px; font-size: 10px; font-weight: 700;
+  margin-top: 6px; font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ─── MAIN CONTENT ─── */
+.main { flex: 1; overflow-y: auto; background: var(--bg); }
+
+/* ─── VIEWS ─── */
+.view { display: none; padding: 32px 36px; min-height: 100%; }
+.view.active { display: block; }
+
+/* ─── Page header ─── */
+.page-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+.page-sub { color: var(--text2); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+
+/* ─── ONBOARDING JOURNEY VIEW ─── */
+
+/* Journey progress bar */
+.journey-bar {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 24px 28px;
+  margin-bottom: 28px;
+  display: flex; align-items: center; gap: 0;
+}
+.journey-step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  position: relative; cursor: pointer;
+}
+.journey-step:not(:last-child)::after {
+  content: ''; position: absolute;
+  top: 18px; left: 50%; width: 100%; height: 2px;
+  background: var(--border2); z-index: 0;
+}
+.journey-step.done:not(:last-child)::after { background: var(--green); }
+.journey-step.active:not(:last-child)::after { background: linear-gradient(90deg, var(--amber), var(--border2)); }
+
+.step-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; z-index: 1;
+  margin-bottom: 10px; transition: all .3s;
+  color: var(--text3);
+}
+.journey-step.done .step-circle { background: var(--green); border-color: var(--green); color: var(--bg); font-size: 16px; }
+.journey-step.active .step-circle { background: var(--amber); border-color: var(--amber); color: var(--bg); box-shadow: 0 0 16px rgba(245,166,35,0.4); }
+.step-label { font-size: 11px; font-weight: 600; color: var(--text3); text-align: center; max-width: 80px; }
+.journey-step.active .step-label { color: var(--amber); font-weight: 700; }
+.journey-step.done .step-label { color: var(--green); }
+
+/* Tier unlock banner */
+.tier-banner {
+  border-radius: var(--radius); padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px; position: relative; overflow: hidden;
+}
+.tier-banner.bronze {
+  background: linear-gradient(135deg, #2A2010, #1E1A10);
+  border: 1px solid rgba(205,127,50,0.3);
+}
+.tier-banner.silver {
+  background: linear-gradient(135deg, #1A1E2A, #141820);
+  border: 1px solid rgba(200,200,220,0.25);
+}
+.tier-banner::before {
+  content: attr(data-emoji);
+  position: absolute; right: 20px; font-size: 56px; opacity: 0.12;
+}
+.tier-icon { font-size: 32px; }
+.tier-body { flex: 1; }
+.tier-title { font-size: 17px; font-weight: 800; }
+.tier-desc { font-size: 13px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+.tier-badge {
+  background: rgba(205,127,50,0.2); color: #CD7F32;
+  border: 1px solid rgba(205,127,50,0.4);
+  border-radius: 8px; padding: 6px 16px;
+  font-size: 12px; font-weight: 800; white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.tier-badge.silver { background: rgba(200,200,220,0.1); color: #C0C0D8; border-color: rgba(200,200,220,0.3); }
+.tier-badge.gold { background: rgba(245,166,35,0.15); color: var(--amber); border-color: rgba(245,166,35,0.4); }
+
+/* Requirement cards grid */
+.req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.req-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  cursor: pointer; transition: all .25s;
+  position: relative; overflow: hidden;
+}
+.req-card:hover { border-color: var(--border2); background: var(--bg3); transform: translateY(-1px); }
+.req-card.completed { border-color: rgba(61,220,151,0.3); background: rgba(61,220,151,0.03); }
+.req-card.optional { border-style: dashed; }
+.req-card.locked { opacity: 0.5; cursor: not-allowed; }
+
+.req-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.req-icon-wrap { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: var(--surface); }
+.req-status-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 100px; padding: 4px 11px; font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.req-status-chip.done { background: var(--green-dim); color: var(--green); }
+.req-status-chip.pending { background: var(--amber-dim); color: var(--amber); }
+.req-status-chip.missing { background: var(--red-dim); color: var(--red); }
+.req-status-chip.optional { background: var(--blue-dim); color: var(--blue); }
+.req-status-chip.locked { background: rgba(255,255,255,0.06); color: var(--text3); }
+
+.req-name { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+.req-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.req-why {
+  margin-top: 10px; padding: 8px 12px;
+  background: rgba(245,166,35,0.06); border-left: 2px solid var(--amber);
+  border-radius: 0 6px 6px 0; font-size: 11px; color: var(--text2);
+}
+.req-why strong { color: var(--amber); }
+
+/* Informal path notice */
+.info-box {
+  border-radius: var(--radius); padding: 18px 20px;
+  margin-bottom: 20px; display: flex; gap: 14px;
+  align-items: flex-start;
+}
+.info-box.amber { background: rgba(245,166,35,0.06); border: 1px solid rgba(245,166,35,0.2); }
+.info-box.green { background: var(--green-dim); border: 1px solid rgba(61,220,151,0.2); }
+.info-box.blue { background: var(--blue-dim); border: 1px solid rgba(96,165,250,0.2); }
+.info-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.info-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.info-text strong { color: var(--text); }
+
+/* ─── TRUST SCORE VIEW ─── */
+.trust-hero {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px;
+  display: flex; align-items: center; gap: 28px;
+  margin-bottom: 24px;
+}
+.trust-donut { position: relative; width: 120px; height: 120px; flex-shrink: 0; }
+.trust-donut svg { transform: rotate(-90deg); }
+.trust-donut-label {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.trust-score-num { font-size: 30px; font-weight: 900; color: var(--amber); line-height: 1; }
+.trust-score-max { font-size: 12px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+.trust-body { flex: 1; }
+.trust-level { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.trust-desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+.trust-next {
+  display: flex; align-items: center; gap: 10px; font-size: 13px;
+  background: var(--surface); border-radius: 8px; padding: 10px 14px;
+}
+.trust-next-bar { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.trust-next-fill { height: 100%; background: linear-gradient(90deg, var(--amber), #FFCC44); border-radius: 3px; width: 68%; }
+
+/* Trust factors */
+.trust-factors { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+.trust-factor {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; text-align: center;
+}
+.tf-icon { font-size: 24px; margin-bottom: 10px; }
+.tf-label { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.tf-val { font-size: 20px; font-weight: 800; }
+.tf-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.tf-fill { height: 100%; border-radius: 2px; }
+
+/* ─── CASH FLOW VIEW ─── */
+.cashflow-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.cf-card {
+  border-radius: var(--radius); padding: 22px;
+  border: 1px solid var(--border);
+}
+.cf-card.main { background: linear-gradient(135deg, #1A2B1A, #0F1A10); border-color: rgba(61,220,151,0.2); }
+.cf-card.pending { background: var(--bg2); }
+.cf-card.qp { background: linear-gradient(135deg, #2A2010, #1E1A10); border-color: rgba(245,166,35,0.25); }
+.cf-lbl { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.cf-amount { font-size: 28px; font-weight: 900; }
+.cf-amount.green { color: var(--green); }
+.cf-amount.amber { color: var(--amber); }
+.cf-sub { font-size: 12px; color: var(--text3); margin-top: 5px; }
+
+/* Payment cycle visual */
+.payment-cycle {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+}
+.cycle-title { font-size: 15px; font-weight: 700; margin-bottom: 18px; }
+.cycle-track { display: flex; align-items: center; gap: 0; margin-bottom: 16px; }
+.cycle-node {
+  display: flex; flex-direction: column; align-items: center;
+  flex: 1; position: relative;
+}
+.cycle-node:not(:last-child)::after {
+  content: ''; position: absolute;
+  top: 16px; left: 50%; width: 100%; height: 2px;
+  z-index: 0;
+}
+.cycle-node.done:not(:last-child)::after { background: var(--green); }
+.cycle-node.active:not(:last-child)::after { background: linear-gradient(90deg, var(--amber), var(--border2)); }
+.cycle-node.future:not(:last-child)::after { background: var(--border2); }
+.cycle-dot {
+  width: 32px; height: 32px; border-radius: 50%; z-index: 1;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+  margin-bottom: 8px;
+}
+.cycle-node.done .cycle-dot { background: var(--green); color: var(--bg); }
+.cycle-node.active .cycle-dot { background: var(--amber); color: var(--bg); box-shadow: 0 0 14px rgba(245,166,35,0.4); }
+.cycle-node.future .cycle-dot { background: var(--surface); border: 2px solid var(--border2); color: var(--text3); }
+.cycle-lbl { font-size: 11px; color: var(--text3); text-align: center; max-width: 70px; }
+.cycle-day { font-size: 10px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; margin-top: 3px; }
+
+/* QuickPay explainer */
+.qp-explainer {
+  background: linear-gradient(135deg, #2A2010 0%, #1A1408 100%);
+  border: 1px solid rgba(245,166,35,0.25); border-radius: var(--radius); padding: 22px;
+  margin-bottom: 20px;
+}
+.qp-title { font-size: 15px; font-weight: 800; color: var(--amber); margin-bottom: 10px; }
+.qp-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+.qp-row:last-child { border-bottom: none; }
+.qp-label { color: var(--text2); }
+.qp-val { font-weight: 700; }
+.qp-val.green { color: var(--green); }
+.qp-val.amber { color: var(--amber); }
+.qp-val.red { color: var(--red); }
+
+/* Cash alternatives */
+.cash-alts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cash-alt {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; cursor: pointer; transition: all .2s;
+}
+.cash-alt:hover { border-color: var(--border2); background: var(--bg3); }
+.cash-alt-icon { font-size: 28px; margin-bottom: 10px; }
+.cash-alt-name { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.cash-alt-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.cash-alt-tag {
+  display: inline-block; margin-top: 8px;
+  background: var(--amber-dim); color: var(--amber);
+  border-radius: 100px; padding: 2px 10px; font-size: 10px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ─── FORMALIZATION PATH VIEW ─── */
+.formalization-hero {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 28px;
+  margin-bottom: 24px;
+  display: flex; gap: 24px; align-items: flex-start;
+}
+.form-path-col { flex: 1; }
+.form-path-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+.form-path-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+.path-steps { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.path-step {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border-radius: 10px; padding: 12px 16px;
+  font-size: 13px; cursor: pointer; transition: all .2s; border: 1px solid transparent;
+}
+.path-step:hover { border-color: var(--amber); background: var(--amber-dim); }
+.path-step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--amber-dim); color: var(--amber); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
+.path-step-body { flex: 1; }
+.path-step-name { font-weight: 700; }
+.path-step-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.path-step-time { font-size: 11px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+
+.form-vs { display: flex; flex-direction: column; gap: 12px; width: 280px; }
+.vs-card {
+  border-radius: 12px; padding: 16px;
+}
+.vs-card.informal { background: rgba(255,107,107,0.05); border: 1px solid rgba(255,107,107,0.2); }
+.vs-card.formal { background: rgba(61,220,151,0.05); border: 1px solid rgba(61,220,151,0.2); }
+.vs-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace; }
+.vs-title.red { color: var(--red); }
+.vs-title.green { color: var(--green); }
+.vs-item { font-size: 12px; color: var(--text2); padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.vs-item:last-child { border-bottom: none; }
+
+/* Benefits grid */
+.benefits-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+.benefit-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.benefit-icon { font-size: 26px; margin-bottom: 12px; }
+.benefit-name { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.benefit-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+.benefit-unlock { margin-top: 10px; font-size: 11px; color: var(--amber); font-family: 'IBM Plex Mono', monospace; }
+
+/* ─── SHARED UI ─── */
+.section-title {
+  font-size: 16px; font-weight: 800; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-divider {
+  height: 1px; background: var(--border); margin: 24px 0;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 22px; border-radius: 10px; border: none;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s;
+}
+.btn-amber { background: var(--amber); color: #0F0A00; }
+.btn-amber:hover { background: #FFB93A; box-shadow: 0 4px 20px rgba(245,166,35,0.3); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border2); color: var(--text2); }
+.btn-outline:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+.btn-green { background: var(--green); color: #021008; }
+.btn-green:hover { background: #5AEED4; }
+.btn-sm { padding: 8px 16px; font-size: 12px; border-radius: 8px; }
+
+/* Pill tags */
+.pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 100px; padding: 3px 10px; font-size: 11px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+.pill-amber { background: var(--amber-dim); color: var(--amber); }
+.pill-green { background: var(--green-dim); color: var(--green); }
+.pill-red { background: var(--red-dim); color: var(--red); }
+.pill-blue { background: var(--blue-dim); color: var(--blue); }
+.pill-ghost { background: rgba(255,255,255,0.06); color: var(--text3); }
+
+/* Arabic support */
+.ar { font-family: 'Noto Sans Arabic', sans-serif; direction: rtl; font-size: 0.95em; }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.view.active > * { animation: fadeUp .3s ease both; }
+.view.active > *:nth-child(2) { animation-delay: .05s; }
+.view.active > *:nth-child(3) { animation-delay: .1s; }
+.view.active > *:nth-child(4) { animation-delay: .15s; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-left: 3px solid var(--amber);
+  border-radius: 12px; padding: 14px 18px;
+  box-shadow: var(--shadow-lg); z-index: 999;
+  transform: translateX(120%); transition: transform .3s ease;
+  max-width: 300px;
+}
+.toast.show { transform: translateX(0); }
+.toast-title { font-weight: 800; font-size: 13px; color: var(--amber); margin-bottom: 3px; }
+.toast-body { font-size: 12px; color: var(--text2); }
+
+/* Progress pill */
+.progress-pill {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2);
+}
+.progress-mini { width: 80px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.progress-mini-fill { height: 100%; background: var(--amber); border-radius: 2px; transition: width .5s ease; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ─── SIDEBAR ─── -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🚛</div>
+      <div>
+        <div class="logo-name">Shahi<span>Log</span></div>
+        <div class="logo-tagline">بوابة السائق — Driver Gateway</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="nav-section-label">Mon Parcours</div>
+      <button class="nav-item active" onclick="showView('onboarding', this)">
+        <span class="nav-icon">🗺</span> Étapes d'inscription
+        <span class="nav-badge red">3</span>
+      </button>
+      <button class="nav-item" onclick="showView('trust', this)">
+        <span class="nav-icon">⭐</span> Score de confiance
+      </button>
+      <button class="nav-item" onclick="showView('cashflow', this)">
+        <span class="nav-icon">💰</span> Mon argent
+        <span class="nav-badge green">NEW</span>
+      </button>
+      <button class="nav-item" onclick="showView('formalization', this)">
+        <span class="nav-icon">📋</span> Devenir formel
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="nav-section-label">Plateforme</div>
+      <button class="nav-item" onclick="toast('🚛 Chargements','Bientôt disponible. Terminez d\'abord votre inscription.')">
+        <span class="nav-icon">📦</span> Chargements proches
+      </button>
+      <button class="nav-item" onclick="toast('💬 Messagerie','Messagerie directe activée après Bronze.')">
+        <span class="nav-icon">💬</span> Messages
+      </button>
+      <button class="nav-item" onclick="toast('⛽ Carburant','Carte carburant disponible dès le niveau Bronze.')">
+        <span class="nav-icon">⛽</span> Carte carburant
+      </button>
+    </div>
+
+    <div class="driver-card">
+      <div class="driver-mini">
+        <div class="driver-avatar">🧔</div>
+        <div>
+          <div class="driver-mini-name">Mustapha B.</div>
+          <div class="driver-mini-status">Camion: 26T Semi · Béni Mellal</div>
+        </div>
+      </div>
+      <div class="driver-tier">🥉 Niveau Bronze — En cours</div>
+      <div class="progress-pill" style="margin-top:10px;">
+        <div class="progress-mini"><div class="progress-mini-fill" style="width:52%"></div></div>
+        <span>52% complet</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── MAIN ─── -->
+  <div class="main">
+
+    <!-- ══════════════════════════════════════════
+         VIEW 1 — ONBOARDING JOURNEY
+    ══════════════════════════════════════════ -->
+    <div id="view-onboarding" class="view active">
+      <div class="page-title">Bienvenue sur TriqLog, Mustapha 👋</div>
+      <div class="page-sub">Pas besoin d'être enregistré fiscalement pour commencer. Commencez à zéro — gagnez votre statut étape par étape. <span class="ar">لا تحتاج إلى أي وثائق رسمية للبدء</span></div>
+
+      <!-- Journey progress -->
+      <div class="journey-bar">
+        <div class="journey-step done" onclick="toast('✓ Terminé','Compte créé avec succès.')">
+          <div class="step-circle">✓</div>
+          <div class="step-label">Numéro de téléphone</div>
+        </div>
+        <div class="journey-step done" onclick="toast('✓ Terminé','CIN vérifié par photo.')">
+          <div class="step-circle">✓</div>
+          <div class="step-label">CIN / identité</div>
+        </div>
+        <div class="journey-step active" onclick="toast('🔄 En cours','Photo de la carte grise en attente de vérification.')">
+          <div class="step-circle">3</div>
+          <div class="step-label">Carte grise</div>
+        </div>
+        <div class="journey-step" onclick="toast('🔒 Niveau suivant','Débloqué après Bronze.')">
+          <div class="step-circle">4</div>
+          <div class="step-label">Premier voyage</div>
+        </div>
+        <div class="journey-step" onclick="toast('🔒 Plus tard','Optionnel — débloqué progressivement.')">
+          <div class="step-circle">5</div>
+          <div class="step-label">Registre Comm.</div>
+        </div>
+        <div class="journey-step" onclick="toast('🔒 Avancé','Pour les utilisateurs Argent et Or.')">
+          <div class="step-circle">6</div>
+          <div class="step-label">CNSS / ICE</div>
+        </div>
+      </div>
+
+      <!-- Current tier -->
+      <div class="tier-banner bronze" data-emoji="🥉">
+        <div class="tier-icon">🥉</div>
+        <div class="tier-body">
+          <div class="tier-title">Niveau Bronze — Accès immédiat au marché</div>
+          <div class="tier-desc">Avec seulement votre <strong>CIN + carte grise</strong>, vous pouvez déjà accepter des chargements. TriqLog retient une petite commission — aucune paperasse fiscale requise pour l'instant.</div>
+        </div>
+        <div class="tier-badge">🥉 BRONZE</div>
+      </div>
+
+      <!-- Key info box -->
+      <div class="info-box amber">
+        <div class="info-icon">💡</div>
+        <div class="info-text">
+          <strong>Pourquoi on ne demande pas tout d'un coup ?</strong> Nous savons que beaucoup de chauffeurs travaillent sans registre de commerce ni numéro ICE. C'est normal au Maroc. Notre approche : <strong>commencez à gagner aujourd'hui</strong>, et nous vous aidons à vous formaliser progressivement — avec un vrai intérêt financier à chaque étape.
+        </div>
+      </div>
+
+      <!-- Requirements grid -->
+      <div class="section-title">📋 Documents requis par niveau</div>
+      <div class="req-grid">
+
+        <div class="req-card completed" onclick="toast('✓ Vérifié','CIN photographié et validé par notre équipe.')">
+          <div class="req-header">
+            <div class="req-icon-wrap">🪪</div>
+            <div class="req-status-chip done">✓ Vérifié</div>
+          </div>
+          <div class="req-name">CIN — Carte d'identité nationale</div>
+          <div class="req-desc">Requis pour tout le monde. Photo recto-verso suffisante. Vérification manuelle sous 2h.</div>
+          <div class="req-why"><strong>Pourquoi :</strong> Sécurité de base pour les chargeurs. Pas de partage avec les impôts.</div>
+        </div>
+
+        <div class="req-card" onclick="openDoc('carteGrise')">
+          <div class="req-header">
+            <div class="req-icon-wrap">📄</div>
+            <div class="req-status-chip pending">⏳ En attente</div>
+          </div>
+          <div class="req-name">Carte grise — Titre de propriété</div>
+          <div class="req-desc">Photo de la carte grise du camion. Accepté même si le camion est en leasing ou co-propriété.</div>
+          <div class="req-why"><strong>Pourquoi :</strong> Confirme que vous avez accès légal au véhicule. Pas partagé.</div>
+        </div>
+
+        <div class="req-card" onclick="openDoc('assurance')">
+          <div class="req-header">
+            <div class="req-icon-wrap">🛡️</div>
+            <div class="req-status-chip missing">! Manquant</div>
+          </div>
+          <div class="req-name">Assurance RC Transport</div>
+          <div class="req-desc">Assurance responsabilité civile en cours de validité. Si vous n'en avez pas, nous proposons un partenariat Wafaassurance à partir de 180 DH/mois.</div>
+          <div class="req-why"><strong>Pourquoi :</strong> Protège votre cargaison ET vous en cas d'accident.</div>
+        </div>
+
+        <div class="req-card" onclick="openDoc('visite')">
+          <div class="req-header">
+            <div class="req-icon-wrap">🔧</div>
+            <div class="req-status-chip missing">! Manquant</div>
+          </div>
+          <div class="req-name">Visite technique valide</div>
+          <div class="req-desc">Document de contrôle technique en cours. Si votre visite est expirée, nous avons des partenaires centres de contrôle à Casablanca, Fès et Agadir.</div>
+          <div class="req-why"><strong>Pourquoi :</strong> Requis légalement. Protège aussi votre réputation sur la plateforme.</div>
+        </div>
+
+        <div class="req-card optional" onclick="toast('📌 Optionnel Argent','Requis pour passer au niveau Argent.')">
+          <div class="req-header">
+            <div class="req-icon-wrap">🏢</div>
+            <div class="req-status-chip optional">Argent</div>
+          </div>
+          <div class="req-name">Registre de commerce (RC)</div>
+          <div class="req-desc">Pas obligatoire pour commencer. Si vous l'avez déjà, ajoutez-le pour débloquer plus de chargements et des paiements plus rapides.</div>
+          <div class="req-why"><strong>Avantage :</strong> Débloque chargeurs OCP, Cosumar, Stellantis — qui exigent un RC.</div>
+        </div>
+
+        <div class="req-card optional locked" onclick="toast('🔒 Niveau Or','CNSS requis uniquement pour les gros contrats récurrents.')">
+          <div class="req-header">
+            <div class="req-icon-wrap">📋</div>
+            <div class="req-status-chip locked">🔒 Or</div>
+          </div>
+          <div class="req-name">CNSS + Numéro ICE (fiscal)</div>
+          <div class="req-desc">Débloqué uniquement au niveau Or. Nous vous accompagnons dans la procédure — coût estimé : 3–4 jours + ~800 DH de frais.</div>
+          <div class="req-why"><strong>Avantage :</strong> Accès facturation e-invoice 2026, +40% de chargements disponibles.</div>
+        </div>
+
+      </div>
+
+      <!-- What NOT to worry about -->
+      <div class="info-box blue">
+        <div class="info-icon">😌</div>
+        <div class="info-text">
+          <strong>Ce que TriqLog ne vous demandera jamais (au niveau Bronze) :</strong> numéro fiscal, déclaration TVA, patente, CNSS, extrait de casier judiciaire. Vous pouvez travailler sur la plateforme de manière entièrement anonyme vis-à-vis de l'administration fiscale tant que vous restez au niveau Bronze.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button class="btn btn-amber" onclick="toast('📸 Uploader','Ouvrez la caméra pour photographier votre carte grise.')">📸 Uploader carte grise</button>
+        <button class="btn btn-outline" onclick="toast('📞 Aide','Un agent TriqLog vous appellera dans les 30 minutes.')">📞 Besoin d'aide ?</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         VIEW 2 — TRUST SCORE
+    ══════════════════════════════════════════ -->
+    <div id="view-trust" class="view">
+      <div class="page-title">Votre Score de Confiance</div>
+      <div class="page-sub">Au Maroc, la confiance se construit par les relations personnelles. Notre score remplace le carnet d'adresses — il vous représente auprès des chargeurs.</div>
+
+      <!-- Trust hero -->
+      <div class="trust-hero">
+        <div class="trust-donut">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--amber)" stroke-width="12" stroke-dasharray="214 314" stroke-linecap="round"/>
+          </svg>
+          <div class="trust-donut-label">
+            <div class="trust-score-num">68</div>
+            <div class="trust-score-max">/100</div>
+          </div>
+        </div>
+        <div class="trust-body">
+          <div class="trust-level">🥉 Fiable — Niveau Bronze</div>
+          <div class="trust-desc">Votre score vous donne accès aux chargements standards. Pour atteindre <strong>Argent (score 75+)</strong>, complétez votre visite technique et effectuez 5 voyages. Les chargeurs comme Ingelec et Bricoma n'acceptent que des chauffeurs Argent ou plus.</div>
+          <div class="trust-next">
+            <span style="font-size:13px;font-weight:600;">Prochain niveau :</span>
+            <div class="trust-next-bar"><div class="trust-next-fill"></div></div>
+            <span style="font-size:12px;font-weight:700;color:var(--amber);">68/75</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trust factors -->
+      <div class="section-title">🔍 Détail du score</div>
+      <div class="trust-factors">
+        <div class="trust-factor">
+          <div class="tf-icon">🪪</div>
+          <div class="tf-label">Identité</div>
+          <div class="tf-val" style="color:var(--green);">20/20</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:100%;background:var(--green)"></div></div>
+        </div>
+        <div class="trust-factor">
+          <div class="tf-icon">📄</div>
+          <div class="tf-label">Documents véhicule</div>
+          <div class="tf-val" style="color:var(--amber);">12/20</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:60%;background:var(--amber)"></div></div>
+        </div>
+        <div class="trust-factor">
+          <div class="tf-icon">⭐</div>
+          <div class="tf-label">Évaluations chargeurs</div>
+          <div class="tf-val" style="color:var(--amber);">18/25</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:72%;background:var(--amber)"></div></div>
+        </div>
+        <div class="trust-factor">
+          <div class="tf-icon">⏱️</div>
+          <div class="tf-label">Ponctualité</div>
+          <div class="tf-val" style="color:var(--green);">17/20</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:85%;background:var(--green)"></div></div>
+        </div>
+        <div class="trust-factor">
+          <div class="tf-icon">📞</div>
+          <div class="tf-label">Réactivité</div>
+          <div class="tf-val" style="color:var(--amber);">9/15</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:60%;background:var(--amber)"></div></div>
+        </div>
+        <div class="trust-factor">
+          <div class="tf-icon">🏢</div>
+          <div class="tf-label">Formalisation</div>
+          <div class="tf-val" style="color:var(--red);">1/10</div>
+          <div class="tf-bar"><div class="tf-fill" style="width:10%;background:var(--red)"></div></div>
+        </div>
+      </div>
+
+      <!-- How trust is built -->
+      <div class="info-box green">
+        <div class="info-icon">📈</div>
+        <div class="info-text">
+          <strong>Pas de notation par les chargeurs seulement.</strong> Au Maroc, une étoile peut être donnée par jalousie ou rancune. Notre score pondère aussi la <strong>ponctualité GPS</strong>, la <strong>réponse aux appels</strong>, et la <strong>complétion des livraisons</strong> — des données objectives qui ne peuvent pas être manipulées.
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:24px;">🗓️ Actions pour améliorer le score</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="path-step" onclick="toast('+7 pts','Visite technique complétée — score estimé: 75. Niveau Argent débloqué !')">
+          <div class="path-step-num">+7</div>
+          <div class="path-step-body"><div class="path-step-name">Renouveler la visite technique</div><div class="path-step-sub">Centre partenaire TriqLog à Casa — 350 DH, résultat immédiat</div></div>
+          <div class="path-step-time">1 jour</div>
+        </div>
+        <div class="path-step" onclick="toast('+5 pts','5 voyages complétés = +5 points d\'expérience.')">
+          <div class="path-step-num">+5</div>
+          <div class="path-step-body"><div class="path-step-name">Compléter 5 voyages avec GPS actif</div><div class="path-step-sub">Les voyages actuels comptent déjà. Il vous reste 3 voyages.</div></div>
+          <div class="path-step-time">1–2 sem.</div>
+        </div>
+        <div class="path-step" onclick="toast('+10 pts','RC enregistré = +10 points + accès aux grands comptes.')">
+          <div class="path-step-num">+10</div>
+          <div class="path-step-body"><div class="path-step-name">Ajouter votre Registre de Commerce</div><div class="path-step-sub">Si vous en avez un. Sinon, assistance à la création disponible.</div></div>
+          <div class="path-step-time">2–3 jours</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         VIEW 3 — CASH FLOW
+    ══════════════════════════════════════════ -->
+    <div id="view-cashflow" class="view">
+      <div class="page-title">Mon Argent 💰</div>
+      <div class="page-sub">Le cash reste roi au Maroc. Voici toutes vos options — de l'encaissement immédiat au virement bancaire en 60 jours.</div>
+
+      <!-- Balance cards -->
+      <div class="cashflow-cards">
+        <div class="cf-card main">
+          <div class="cf-lbl">Solde disponible</div>
+          <div class="cf-amount green">MAD 3,200</div>
+          <div class="cf-sub">Prêt à retirer</div>
+        </div>
+        <div class="cf-card pending">
+          <div class="cf-lbl">En attente chargeur</div>
+          <div class="cf-amount amber">MAD 8,500</div>
+          <div class="cf-sub">Lot #8821 · Délai: 28 jours</div>
+        </div>
+        <div class="cf-card qp">
+          <div class="cf-lbl">QuickPay disponible</div>
+          <div class="cf-amount amber">MAD 8,288</div>
+          <div class="cf-sub">Après frais 2.5% — reçu en 2h</div>
+        </div>
+      </div>
+
+      <!-- Payment cycle -->
+      <div class="payment-cycle">
+        <div class="cycle-title">🔄 Cycle de paiement habituel — Lot #8821</div>
+        <div class="cycle-track">
+          <div class="cycle-node done">
+            <div class="cycle-dot">✓</div>
+            <div class="cycle-lbl">Chargement livré</div>
+            <div class="cycle-day">Jour 0</div>
+          </div>
+          <div class="cycle-node done">
+            <div class="cycle-dot">✓</div>
+            <div class="cycle-lbl">Facture envoyée</div>
+            <div class="cycle-day">Jour 1</div>
+          </div>
+          <div class="cycle-node active">
+            <div class="cycle-dot">⏳</div>
+            <div class="cycle-lbl">Validation chargeur</div>
+            <div class="cycle-day">Jour 2–5</div>
+          </div>
+          <div class="cycle-node future">
+            <div class="cycle-dot">💳</div>
+            <div class="cycle-lbl">Virement émis</div>
+            <div class="cycle-day">Jour 30</div>
+          </div>
+          <div class="cycle-node future">
+            <div class="cycle-dot">✅</div>
+            <div class="cycle-lbl">Reçu sur compte</div>
+            <div class="cycle-day">Jour 32</div>
+          </div>
+        </div>
+        <div class="info-box amber" style="margin-bottom:0;">
+          <div class="info-icon">⚡</div>
+          <div class="info-text">
+            <strong>QuickPay court-circuite le cycle :</strong> Vous recevez MAD 8,288 dans les <strong>2 heures</strong> (frais de 2.5% = 212 DH). TriqLog avance les fonds et se fait rembourser par le chargeur à J+30. Votre carburant pour la prochaine course n'attend pas 30 jours.
+          </div>
+        </div>
+      </div>
+
+      <!-- QuickPay breakdown -->
+      <div class="qp-explainer">
+        <div class="qp-title">⚡ Simulation QuickPay — Lot #8821</div>
+        <div class="qp-row"><span class="qp-label">Montant facturé</span><span class="qp-val">MAD 8,500</span></div>
+        <div class="qp-row"><span class="qp-label">Frais QuickPay (2.5%)</span><span class="qp-val red">− MAD 212</span></div>
+        <div class="qp-row"><span class="qp-label">Vous recevez</span><span class="qp-val green">MAD 8,288</span></div>
+        <div class="qp-row"><span class="qp-label">Délai de réception</span><span class="qp-val amber">2 heures</span></div>
+        <div class="qp-row"><span class="qp-label">Mode de versement</span><span class="qp-val">Cash agent / CIH / Wafacash</span></div>
+      </div>
+
+      <!-- Cash alternatives (no bank account needed) -->
+      <div class="section-title">💵 Recevoir votre argent — sans compte bancaire</div>
+      <div class="cash-alts">
+        <div class="cash-alt" onclick="toast('💵 Cash Agent','Un agent TriqLog vous remet le cash dans votre ville. 0 frais supplémentaires.')">
+          <div class="cash-alt-icon">🤝</div>
+          <div class="cash-alt-name">Agent Cash TriqLog</div>
+          <div class="cash-alt-desc">Un réseau de 45 agents dans toutes les villes. Récupérez votre paiement en main propre, sans banque.</div>
+          <div class="cash-alt-tag">0 frais · Même jour</div>
+        </div>
+        <div class="cash-alt" onclick="toast('📱 Wafacash','Virement Wafacash vers votre numéro. Retraits dans 2,400 points.')">
+          <div class="cash-alt-icon">📱</div>
+          <div class="cash-alt-name">Wafacash / Cashplus</div>
+          <div class="cash-alt-desc">Envoi vers votre numéro de téléphone. Retraits dans 2,400 points partout au Maroc, sans compte bancaire.</div>
+          <div class="cash-alt-tag">Réseau national</div>
+        </div>
+        <div class="cash-alt" onclick="toast('🏦 CIH Mobile','Ouvrez un compte CIH en ligne en 10 minutes avec votre CIN.')">
+          <div class="cash-alt-icon">🏦</div>
+          <div class="cash-alt-name">CIH Bank Mobile</div>
+          <div class="cash-alt-desc">Compte courant ouvert en ligne avec CIN uniquement. Recommandé pour passer au niveau Argent.</div>
+          <div class="cash-alt-tag">Conseillé</div>
+        </div>
+        <div class="cash-alt" onclick="toast('⛽ Carte carburant','Rechargez directement votre carte Afriquia depuis votre solde TriqLog.')">
+          <div class="cash-alt-icon">⛽</div>
+          <div class="cash-alt-name">Carte Carburant Afriquia</div>
+          <div class="cash-alt-desc">Rechargez votre carte depuis votre solde TriqLog. Économisez sur le carburant sans toucher au cash.</div>
+          <div class="cash-alt-tag">− 0.8 DH/litre</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         VIEW 4 — FORMALIZATION PATH
+    ══════════════════════════════════════════ -->
+    <div id="view-formalization" class="view">
+      <div class="page-title">Devenir Formel — À votre rythme</div>
+      <div class="page-sub">Nous ne forçons personne. Mais chaque étape de formalisation débloque plus d'argent. Voici pourquoi et comment — sans pression.</div>
+
+      <!-- Hero comparison -->
+      <div class="formalization-hero">
+        <div class="form-path-col">
+          <div class="form-path-title">Le chemin naturel d'un chauffeur TriqLog</div>
+          <div class="form-path-desc">La plupart des chauffeurs commencent informels et se formalisent progressivement quand l'intérêt financier devient évident. TriqLog accompagne chaque étape — administrativement et financièrement.</div>
+          <div class="path-steps">
+            <div class="path-step" onclick="toast('🥉 Bronze','Niveau actuel. Accès aux chargements de base.')">
+              <div class="path-step-num">1</div>
+              <div class="path-step-body">
+                <div class="path-step-name">🥉 Bronze — CIN + Carte grise</div>
+                <div class="path-step-sub">Accès immédiat. Chargements jusqu'à MAD 15,000. Cash ou Wafacash.</div>
+              </div>
+              <div class="pill pill-amber">Actuel</div>
+            </div>
+            <div class="path-step" onclick="toast('🥈 Argent','RC requis. +40% chargements disponibles. Délai: 1 semaine.')">
+              <div class="path-step-num">2</div>
+              <div class="path-step-body">
+                <div class="path-step-name">🥈 Argent — + Registre de Commerce</div>
+                <div class="path-step-sub">Accès grands comptes (Ingelec, Bricoma). Paiements bancaires. MAD 50K+</div>
+              </div>
+              <div class="path-step-time">~1 sem.</div>
+            </div>
+            <div class="path-step" onclick="toast('🥇 Or','ICE + CNSS. Accès e-invoicing. +MAD 120K/mois potentiel.')">
+              <div class="path-step-num">3</div>
+              <div class="path-step-body">
+                <div class="path-step-name">🥇 Or — + ICE + CNSS</div>
+                <div class="path-step-sub">Contrats récurrents OCP, Stellantis. E-facturation DGI 2026. Protection sociale.</div>
+              </div>
+              <div class="path-step-time">~2 sem.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informal vs Formal -->
+        <div class="form-vs">
+          <div class="vs-card informal">
+            <div class="vs-title red">Informel aujourd'hui</div>
+            <div class="vs-item">✗ Pas de protection accident grave</div>
+            <div class="vs-item">✗ Chargements limités à MAD 15K</div>
+            <div class="vs-item">✗ Pas de retraite CNSS</div>
+            <div class="vs-item">✗ Exclus des appels d'offres</div>
+            <div class="vs-item">✗ Pas d'accès crédit bancaire</div>
+            <div class="vs-item">✓ Zéro paperasse maintenant</div>
+          </div>
+          <div class="vs-card formal">
+            <div class="vs-title green">Formel (niveau Or)</div>
+            <div class="vs-item">✓ Assurance accidents couverte</div>
+            <div class="vs-item">✓ Chargements illimités</div>
+            <div class="vs-item">✓ Retraite et protection sociale</div>
+            <div class="vs-item">✓ OCP, Stellantis, ONA accessibles</div>
+            <div class="vs-item">✓ Prêt véhicule possible</div>
+            <div class="vs-item">✓ E-invoice automatique 2026</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Benefits unlocked -->
+      <div class="section-title">🎁 Ce que débloque chaque niveau</div>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon">📱</div>
+          <div class="benefit-name">Compte bancaire mobile</div>
+          <div class="benefit-desc">CIH ou Attijari ouvert en ligne avec CIN + selfie. Pas besoin d'aller en agence.</div>
+          <div class="benefit-unlock">🥉 Bronze → débloque</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🤝</div>
+          <div class="benefit-name">Grands comptes industriels</div>
+          <div class="benefit-desc">Ingelec, Bricoma, ONA, Ynna Holding exigent RC. +40% de chargements bien rémunérés.</div>
+          <div class="benefit-unlock">🥈 Argent → débloque</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">⚡</div>
+          <div class="benefit-name">QuickPay sans limite</div>
+          <div class="benefit-desc">Avances jusqu'à MAD 50,000 par voyage. Taux réduit à 1.8% pour les chauffeurs Or.</div>
+          <div class="benefit-unlock">🥇 Or → débloque</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🏥</div>
+          <div class="benefit-name">CNSS — Assurance maladie</div>
+          <div class="benefit-desc">Auto-cotisation via TriqLog à chaque voyage. Retraite + AMO pour vous et votre famille.</div>
+          <div class="benefit-unlock">🥇 Or → débloque</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🚛</div>
+          <div class="benefit-name">Leasing camion partenaire</div>
+          <div class="benefit-desc">Convention avec Maghrebail pour financer un nouveau camion. Historique TriqLog = dossier de crédit.</div>
+          <div class="benefit-unlock">🥇 Or (6 mois) → débloque</div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon">🧾</div>
+          <div class="benefit-name">E-invoicing DGI 2026</div>
+          <div class="benefit-desc">Facturation automatique conforme DGI. Les chargeurs exigent l'e-invoice à partir de janvier 2026.</div>
+          <div class="benefit-unlock">🥇 Or → débloque</div>
+        </div>
+      </div>
+
+      <!-- Practical help -->
+      <div class="section-title">🛠️ Assistance concrète TriqLog</div>
+      <div class="info-box green">
+        <div class="info-icon">🤝</div>
+        <div class="info-text">
+          <strong>Nous envoyons un agent physique.</strong> Pour créer votre RC ou votre numéro ICE, un agent TriqLog vous accompagne au Centre Régional d'Investissement (CRI). Durée : 1 journée. Frais officiels : ~600–800 DH. TriqLog avance les frais sur votre premier chargement suivant.
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button class="btn btn-amber" onclick="toast('📋 Démarrer RC','Un conseiller TriqLog vous contacte sous 24h pour lancer la création du RC.')">📋 Créer mon RC (avec aide)</button>
+        <button class="btn btn-outline" onclick="toast('📊 Simulation','Simulateur de revenus par niveau : Bronze 22K, Argent 48K, Or 90K MAD/mois moyen.')">📊 Simuler mes revenus</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toastEl">
+  <div class="toast-title" id="toastTitle"></div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<script>
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toast(title, body) {
+  const el = document.getElementById('toastEl');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+function openDoc(type) {
+  const msgs = {
+    carteGrise: ['📸 Carte grise','Prenez une photo claire recto-verso. Vérification sous 2h par notre équipe.'],
+    assurance: ['🛡️ Assurance RC','Partenariat Wafaassurance — 180 DH/mois. Activation en 24h sans déplacement.'],
+    visite: ['🔧 Visite technique','Centre partenaire Casa (Bd Zerktouni) — 350 DH. Résultat immédiat. Présentez ce QR code.'],
+  };
+  const [t, b] = msgs[type] || ['', ''];
+  toast(t, b);
+}
+</script>
+</body>
+</html>
