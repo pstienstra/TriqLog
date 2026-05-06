@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TriqLog — Confirmation de livraison</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;background:#09090F;color:#E2E8F0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .card{background:#0F172A;border:1px solid #1E293B;border-radius:16px;padding:32px 24px;max-width:380px;width:100%;text-align:center;}
+  .logo{width:56px;height:56px;margin:0 auto 16px;}
+  .title{font-size:20px;font-weight:700;color:#F0B429;margin-bottom:6px;}
+  .sub{font-size:13px;color:#64748B;margin-bottom:24px;line-height:1.5;}
+  .route{background:#1E293B;border-radius:10px;padding:14px;margin-bottom:20px;}
+  .route-txt{font-size:15px;font-weight:700;color:#E2E8F0;}
+  .route-arrow{color:#F0B429;margin:0 6px;}
+  .route-detail{font-size:11px;color:#64748B;margin-top:4px;}
+  .btn{width:100%;background:#22C55E;color:#0F172A;border:none;border-radius:10px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;}
+  .btn:hover{background:#16A34A;}
+  .btn:disabled{background:#334155;color:#64748B;cursor:not-allowed;}
+  .status{padding:20px;border-radius:10px;margin-top:16px;}
+  .status.success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
+  .status.error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);}
+  .status.already{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3);}
+  .status-icon{font-size:40px;margin-bottom:8px;}
+  .status-title{font-size:18px;font-weight:700;margin-bottom:6px;}
+  .status-sub{font-size:12px;color:#94A3B8;line-height:1.5;}
+  .countdown{margin-top:20px;}
+  .cd-label{font-size:11px;color:#64748B;margin-bottom:8px;}
+  .cd-time{font-size:36px;font-weight:700;color:#F0B429;font-variant-numeric:tabular-nums;}
+  .cd-bar{background:#1E293B;border-radius:6px;height:8px;margin-top:12px;overflow:hidden;}
+  .cd-fill{height:100%;background:#F0B429;transition:width 1s linear;}
+  .spinner{width:40px;height:40px;border:3px solid #1E293B;border-top:3px solid #F0B429;border-radius:50%;animation:spin 0.8s linear infinite;margin:20px auto;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-txt{color:#EF4444;font-size:13px;margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <!-- Logo -->
+  <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="50,2 93,26 93,74 50,98 7,74 7,26" fill="#F0B429"/>
+    <circle cx="28" cy="72" r="7" fill="#1E293B"/>
+    <path d="M28,72 Q38,40 68,22" stroke="#1E293B" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <polygon points="60,8 78,26 58,28" fill="#1E293B"/>
+  </svg>
+
+  <div id="content">
+    <div class="spinner"></div>
+    <div style="font-size:13px;color:#64748B;margin-top:8px;">Chargement...</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyARGrpo_OtkzbnTyPLZuH-kdG-2fgZFeV8",
+  authDomain:"triqlog.firebaseapp.com",
+  projectId:"triqlog",
+  storageBucket:"triqlog.appspot.com",
+  messagingSenderId:"1045412169935",
+  appId:"1:1045412169935:android:7714af2c4e5310b2648fba"
+});
+const db = firebase.firestore();
+
+const params = new URLSearchParams(window.location.search);
+const loadId = params.get('id');
+let countdownInterval = null;
+
+async function init(){
+  if(!loadId){
+    showError('QR code invalide. Aucun identifiant de chargement.');
+    return;
+  }
+  try{
+    const doc = await db.collection('loads').doc(loadId).get();
+    if(!doc.exists){
+      showError('Chargement introuvable. Vérifiez le QR code.');
+      return;
+    }
+    const load = doc.data();
+
+    if(load.status === 'completed'){
+      showAlready(load, 'completed');
+      return;
+    }
+    if(load.status === 'delivered'){
+      // Already delivered, show countdown
+      showDelivered(load);
+      return;
+    }
+    if(load.status !== 'transit'){
+      showError('Ce chargement n\'est pas en cours de livraison (statut: '+load.status+').');
+      return;
+    }
+
+    // Show confirm screen
+    showConfirm(load);
+  }catch(e){
+    showError('Erreur de connexion: '+e.message);
+  }
+}
+
+function showConfirm(load){
+  document.getElementById('content').innerHTML = `
+    <div class="title">Confirmer la livraison</div>
+    <div class="sub">Appuyez sur le bouton ci-dessous pour confirmer l'arrivée et démarrer le déchargement.</div>
+    <div class="route">
+      <div class="route-txt">${load.origin||'?'}<span class="route-arrow">→</span>${load.destination||'?'}</div>
+      <div class="route-detail">${load.type||'Général'} · ${load.weight||'?'} · ${(load.price||0).toLocaleString()} MAD</div>
+      ${load.driverName ? '<div class="route-detail" style="margin-top:4px;">🚛 '+load.driverName+'</div>' : ''}
+    </div>
+    <button class="btn" id="confirmBtn" onclick="confirmDelivery()">✅ Confirmer la livraison</button>
+    <div id="errMsg" class="error-txt" style="display:none;"></div>
+  `;
+}
+
+async function confirmDelivery(){
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Confirmation...';
+  try{
+    await db.collection('loads').doc(loadId).update({
+      status: 'delivered',
+      deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const doc = await db.collection('loads').doc(loadId).get();
+    showDelivered(doc.data());
+  }catch(e){
+    btn.disabled = false;
+    btn.textContent = '✅ Confirmer la livraison';
+    document.getElementById('errMsg').style.display = '';
+    document.getElementById('errMsg').textContent = 'Erreur: '+e.message;
+  }
+}
+
+function showDelivered(load){
+  const delivTs = load.deliveredAt && load.deliveredAt.toDate
+    ? load.deliveredAt.toDate().getTime()
+    : Date.now();
+
+  document.getElementById('content').innerHTML = `
+    <div class="status success">
+      <div class="status-icon">✅</div>
+      <div class="status-title" style="color:#22C55E;">Livraison confirmée !</div>
+      <div class="route-txt" style="margin:8px 0;">${load.origin||'?'}<span class="route-arrow">→</span>${load.destination||'?'}</div>
+      <div class="status-sub">Le compte à rebours de déchargement a démarré. Les fonds seront libérés après 60 minutes.</div>
+    </div>
+    <div class="countdown">
+      <div class="cd-label">⏱ TEMPS DE DÉCHARGEMENT RESTANT</div>
+      <div class="cd-time" id="cdTime">60:00</div>
+      <div class="cd-bar"><div class="cd-fill" id="cdFill" style="width:100%"></div></div>
+    </div>
+  `;
+
+  function tick(){
+    const elapsed = Date.now() - delivTs;
+    const remaining = Math.max(0, 3600000 - elapsed);
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const pct = (remaining / 3600000) * 100;
+    const cdTime = document.getElementById('cdTime');
+    const cdFill = document.getElementById('cdFill');
+    if(!cdTime) { clearInterval(countdownInterval); return; }
+    cdTime.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+    if(cdFill) cdFill.style.width = pct + '%';
+    if(remaining <= 0){
+      clearInterval(countdownInterval);
+      document.getElementById('content').innerHTML = `
+        <div class="status success">
+          <div class="status-icon">💰</div>
+          <div class="status-title" style="color:#22C55E;">Fonds libérés !</div>
+          <div class="status-sub">Le déchargement est terminé. Le paiement a été libéré.<br><br>${load.origin||'?'} → ${load.destination||'?'}</div>
+        </div>
+      `;
+    }
+  }
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+function showAlready(load, status){
+  document.getElementById('content').innerHTML = `
+    <div class="status already">
+      <div class="status-icon">ℹ️</div>
+      <div class="status-title" style="color:#60A5FA;">Déjà traité</div>
+      <div class="status-sub">Ce chargement a déjà été confirmé et terminé.<br><br>${load.origin||'?'} → ${load.destination||'?'}</div>
+    </div>
+  `;
+}
+
+function showError(msg){
+  document.getElementById('content').innerHTML = `
+    <div class="status error">
+      <div class="status-icon">❌</div>
+      <div class="status-title" style="color:#EF4444;">Erreur</div>
+      <div class="status-sub">${msg}</div>
+    </div>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
